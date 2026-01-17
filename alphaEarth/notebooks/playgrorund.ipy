@@ -1,0 +1,620 @@
+# %%
+"""
+Subgraph Dataset Creation Script for AlphaEarth Satellite Data
+===================================================================
+
+Creates train and test LMDB datasets with two-subgraph structure from AlphaEarth GeoTIFF data.
+This is an alternative to create_dataset.py with a different graph topology.
+
+Graph structure:
+- Input graph: Random subset of points with k-NN connectivity
+- Output graph: All points with k-NN connectivity  
+- Cross edges: Connections from output nodes to nearest input nodes
+
+Usage:
+    python create_subgraph_dataset.py <config_name> [--no-test] [--data_path PATH]
+    
+    config_name: Name of config file in dataset_configs_subgraph/ (without .json extension)
+    --no-test: Optional flag to skip test dataset creation
+    --data_path: Path to AlphaEarth data directory (default: ../data/)
+
+Examples:
+    python create_subgraph_dataset.py subgraph_config
+    # Uses default: ../data/
+"""
+
+# %%
+import sys
+import os
+import argparse
+from pathlib import Path
+import torch
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+    os.chdir("/Volumes/T7-storage/NOFE/alphaEarth/scripts/" )
+else:
+    device = torch.device("cpu")
+print(device)
+sys.path.append("../../src/dataset_utilities.py")
+
+
+from utilities_alphaearth import (
+    setup_device,
+    load_config,
+    validate_subgraph_config,
+    split_train_test,
+    create_subgraph_lmdb_dataset,
+    set_seed,
+)
+
+# %%
+
+def print_subgraph_summary(config_name, train_years, test_years, config):
+    """Print summary of subgraph dataset configuration."""
+    total_years = len(train_years) + len(test_years)
+    
+    # Determine if using manual or automatic split
+    has_manual_split = 'train_years' in config and 'test_years' in config
+    
+    if has_manual_split:
+        train_samples = config['train_samples_per_year']
+        test_samples = config['test_samples_per_year']
+    else:
+        train_samples = config.get('samples_per_year')
+        test_samples = config.get('samples_per_year')
+    
+    print("=" * 60)
+    print(f"Subgraph Dataset Configuration: {config_name}")
+    print("=" * 60)
+    print(f"Total years:          {total_years}")
+    print(f"  Training years:     {len(train_years)}")
+    print(f"  Test years:         {len(test_years)}")
+    if has_manual_split:
+        print(f"Samples per year:     train={train_samples}, test={test_samples}")
+        print(f"  Total train samples: {len(train_years) * train_samples}")
+        print(f"  Total test samples:  {len(test_years) * test_samples}")
+    else:
+        print(f"Samples per year:     {train_samples}")
+        print(f"  Total train samples: {len(train_years) * train_samples}")
+        print(f"  Total test samples:  {len(test_years) * test_samples}")
+    print(f"\nGraph parameters:")
+    print(f"  k_in (input):       {config['k_in']}")
+    print(f"  k_out (output):     {config['k_out']}")
+    print(f"  k_cross (cross):    {config['k_cross']}")
+    print(f"  Perplexity:         {config['perplexity']}")
+    print(f"  Input nodes:        {config['n_points_input_min']}-{config['n_points_input_max']} (random)")
+    
+    if 'lat_min' in config and 'lat_max' in config and 'lon_min' in config and 'lon_max' in config:
+        print(f"\nRegion bounds:")
+        print(f"  Latitude:           [{config['lat_min']}, {config['lat_max']}]")
+        print(f"  Longitude:          [{config['lon_min']}, {config['lon_max']}]")
+    
+    print(f"\nYears: {', '.join(map(str, train_years + test_years))}")
+    print("=" * 60 + "\n")
+
+
+# %% loading alpha Earth data to memory
+
+import rasterio
+from rasterio.windows import from_bounds
+import xarray as xr
+import numpy as np
+import torch
+from pyproj import Transformer
+import faiss
+from torch_geometric.data import Data
+
+
+# %% Testing around
+
+graph_config={
+    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 3,
+    "perplexity": 15,
+    "n_points_input_min": 1000,
+    "n_points_input_max": 2000,
+    "n_points_lat_out": 100,
+    "n_points_lon_out": 100,
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 100,
+    "lat_min": 59.66,
+    "lat_max": 59.73,
+    "lon_min": 10.79,
+    "lon_max": 10.86,
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "cache_region_data": True
+    }
+
+dataset_config = {
+    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 3,
+    "perplexity": 15,
+    "n_points_input_min": 1000,
+    "n_points_input_max": 2000,
+    "n_points_lat_out": 100,
+    "n_points_lon_out": 100,
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 100,
+    "lat_min": 59.66,
+    "lat_max": 59.73,
+    "lon_min": 10.79,
+    "lon_max": 10.86,
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "cache_region_data": True
+    }
+
+sample_config = {
+    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data",
+    "filename": "sat_emb_2018.tif",
+    "bbox": (10.79, 59.66, 10.86, 59.73),
+    "k": 5
+}
+
+# %% define graph_generator
+class AlphaEarth_Graph_Generator:
+    """
+    This class will load data from alphaEarth data and is equipped with all functionalities to generate graph samples
+    """
+    def __init__(self, sample_config: dict):
+        self.conig = sample_config.copy()
+        
+        # Dynamically create attributes for easy access
+        for key, value in sample_config.items():
+            setattr(self, key, value)
+
+    def load_subregion(self):
+        """
+        Load a bounding box from a large GeoTIFF and return as xarray.DataArray.
+        
+        bbox = (min_lon, min_lat, max_lon, max_lat)
+        self.da will have structure: (channels, latitude, longitude)
+        """
+        
+        with rasterio.open(os.path.join(self.data_folder_path, self.filename)) as src:
+            if self.bbox is None:
+                # Read the entire raster
+                arr = src.read()  # shape: (bands, height, width)
+                transform = src.transform
+            
+            else:
+                min_lon, min_lat, max_lon, max_lat = self.bbox
+                # compute pixel window inside file
+                window = from_bounds(min_lon, min_lat, max_lon, max_lat, src.transform)
+                
+                # efficient read — only reads the requested pixels
+                arr = src.read(window=window)  # shape: (bands, h, w)
+                
+                # geotransform for the subset
+                transform = src.window_transform(window)
+            crs = src.crs
+            
+        # convert to xarray for ML-ready operations
+        arr = xr.DataArray(
+            arr,
+            dims=("band", "y", "x"),
+            coords={"band": np.arange(arr.shape[0])},
+            attrs={"transform": transform, "crs": crs}
+        ).values
+        
+        # drop NAs
+        mask = ~np.isnan(arr).any(axis=(1, 2))
+        arr = arr[mask]
+        
+        # normalize
+        mean = arr.mean(axis=(1,2), keepdims=True)
+        std = arr.std(axis=(1,2), keepdims=True)
+        self.da = (arr - mean) / std
+        self.grid_latitudes = np.linspace(self.bbox[1], self.bbox[3], self.da.shape[1])
+        self.grid_longitudes = np.linspace(self.bbox[0], self.bbox[2], self.da.shape[2])
+
+
+    def generate_normed_sample(self, N:int=None, method:str=None):
+        n_channels, n_lat, n_lon = self.da.shape
+        if N==None:
+            N=self.N
+        if method==None:
+            method=self.generator_method
+        
+        if N >= n_lat*n_lon:
+            print(f"requested number of points larger then dataset\n-> return full dataset of {n_lat*n_lon} points.")
+            N = n_lat*n_lon
+        
+        if method=="random":
+            # Flatten indices, sample without replacement
+            flat_indices = np.random.choice(n_lat * n_lon, size=N, replace=False)
+            # Convert back to 2D coordinates
+            indices = np.column_stack(np.unravel_index(flat_indices, (n_lat, n_lon)))
+            # sort by first and then second column
+            indices = indices[np.lexsort((indices[:, 1], indices[:, 0]))]
+            
+            self.normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
+            latitudes = self.grid_latitudes[indices[:,0]]
+            longitudes = self.grid_longitudes[indices[:,1]]
+            self.gps = np.column_stack((latitudes, longitudes))
+        
+        elif method=="interpolate":
+            pass
+        
+        elif method=="regular_subset":
+            aspect = n_lat / n_lon
+            n_lat_new = int(round(np.sqrt(N * aspect)))
+            n_lon_new = int(round(N / n_lat_new))  
+            
+            lat_inds = np.arange(n_lat)
+            lat_inds_subset = lat_inds[np.linspace(0, len(lat_inds) - 1, n_lat_new, dtype=int)]
+            
+            lon_inds = np.arange(n_lon)
+            lon_inds_subset = lon_inds[np.linspace(0, len(lon_inds) - 1, n_lon_new, dtype=int)]
+            
+            indices1 = np.repeat(lat_inds_subset, n_lon_new) # repeats each component 'n_lon_new' times
+            indices2 = np.tile(lon_inds_subset, n_lat_new) # repeats full array 'n_lat_new' times 
+            
+            indices = np.vstack([indices1,indices2]).T
+            
+            self.normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
+            latitudes = self.grid_latitudes[indices[:,0]]
+            longitudes = self.grid_longitudes[indices[:,1]]
+            self.gps = np.column_stack((latitudes, longitudes))
+        
+        else:
+            print(f'"{method}" is an invalid sample method!')
+
+
+    def cartesian_projection(self, lat=None, lon=None):
+        """
+        Convert GPS coordinates (lat/lon) to ECEF coordinates (x, y, z)
+        Vectorized over all points.
+        """
+        altitude = 5500
+        mode = "class_external"
+        
+        if lat == None:
+            lat = self.gps[:, 0]
+            mode = "class_internal"
+        elif type(lat)==float:
+            lat = np.array(lat)
+        if lon == None:
+            lon = self.gps[:, 1]
+        elif type(lon)==float:
+            lon = np.array(llonat)
+        
+        # Create transformer once
+        trans = Transformer.from_crs(4979, 4978, always_xy=True)
+        
+        # Vectorized transform
+        x, y, z = trans.transform(lon, lat, np.full_like(lat, altitude))
+        
+        # Stack into (N, 3)
+        xyz = np.stack([x, y, z], axis=-1)
+        
+        # normalize
+        #xyz = xyz / np.linalg.norm(xyz, axis=1, keepdims=True)
+        
+        if mode == "class_internal":
+            self.cartesian = xyz
+        elif mode == "class_external":
+            return xyz
+
+
+    def norm_coords(self):
+        """
+        We norm the 3-dim. cartesian coordinates such that the values are [-1, 1].
+        The scale of the 3 dimensions w.r.t each other remains the same.
+        This is accomplished by subtracting their individual center values, but dividing by a common denominator
+        """
+        bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
+        bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
+        
+        x_min = min(bound_1[0], bound_2[0], bound_3[0], bound_4[0])
+        x_max = max(bound_1[0], bound_2[0], bound_3[0], bound_4[0])
+        y_min = min(bound_1[1], bound_2[1], bound_3[1], bound_4[1])
+        y_max = max(bound_1[1], bound_2[1], bound_3[1], bound_4[1])
+        z_min = min(bound_1[2], bound_2[2], bound_3[2], bound_4[2])
+        z_max = max(bound_1[2], bound_2[2], bound_3[2], bound_4[2])
+        
+        x_center = (x_max + x_min) / 2
+        y_center = (y_max + y_min) / 2
+        z_center = (z_max + z_min) / 2
+        
+        denominator = np.sqrt(3) * np.sqrt( (x_max-x_min)**2 + (y_max-y_min)**2 + (z_max-z_min)**2 )
+                
+        normed_coords = self.cartesian
+        normed_coords[:,0] = (normed_coords[:,0] - x_center) / denominator
+        normed_coords[:,1] = (normed_coords[:,1] - y_center) / denominator
+        normed_coords[:,2] = (normed_coords[:,2] - z_center) / denominator
+        
+        self.normed_coords = normed_coords
+
+
+
+    def knn(self, k:int=None, X=None):
+        if X==None:
+            X = self.normed_coords
+        X = X.astype('float32')
+        if k == None:
+            k=self.k
+        
+        N, D = X.shape
+        index = faiss.IndexFlatL2(D)  # L2 distance index (Euclidean)
+        index.add(X)
+        
+        # Search for k+1 neighbors to exclude the point itself (first neighbor is always self)
+        distances, indices = index.search(X, k + 1)
+        
+        # Exclude self-match
+        self.distance_table = distances[:, 1:]
+        self.neighbor_table = indices[:, 1:]
+
+    def build_edge_index(self):
+        """
+        Build PyTorch Geometric edge_index for incoming kNN graph.
+        """
+        N, k = self.neighbor_table.shape
+        
+        # Source nodes: neighbors
+        src = self.neighbor_table.reshape(-1)
+        # Target nodes: each node i repeated k times
+        dst = np.repeat(np.arange(N), k)
+        # Stack into PyG format
+        self.edge_indices = torch.tensor(
+            np.vstack([src, dst]),
+            dtype=torch.long
+        )
+        # distance attribute per edge
+        self.edge_dist = self.distance_table.reshape(-1, 1)
+
+
+    def get_edge_attributes(self, k=None):
+        
+        self.cartesian_projection() # get 3 dim. cartesian coordinates for sample locations
+        self.norm_coords() # norm coordinates based on subregion
+        self.knn() # get neighbors and distances as table
+        self.build_edge_index() # reshape to torch usable format in directed graph structure
+        
+        # target node positions
+        self.node_pos = self.normed_coords[self.edge_indices[1,:]]
+        
+        # distance values (normed by distance to furthes away neighbor)
+        if k == None:
+            k = self.k
+        max_neighbor_dists = np.repeat(self.distance_table[:,k-1], k)
+        regularized_dists = self.edge_dist.squeeze()/max_neighbor_dists
+        self.regularized_distances = regularized_dists[:, np.newaxis] 
+        
+        # normed displacement vector
+        source_nodes = self.normed_coords[self.edge_indices[0,:]]
+        target_nodes = self.normed_coords[self.edge_indices[1,:]]
+        absolute_displacement = source_nodes - target_nodes
+        self.normed_displacement = absolute_displacement / np.linalg.norm(absolute_displacement, axis=1, keepdims=True)
+        
+        # NOTE optionally include date encoding, etc.
+        # if self.include_feat_diff:
+        
+        # bind it all together and make it a tensor
+        edge_attributes = np.hstack([self.node_pos, self.normed_displacement, self.regularized_distances])
+        self.edge_attributes = torch.tensor(edge_attributes)
+
+
+    def get_node_features(self, method="regular"):
+        pos_tensor = torch.tensor(self.normed_coords)
+        self.node_features = torch.cat([self.normed_values, pos_tensor], dim=1)
+
+    def get_sigmas(self, distances=None, perplexity=None):
+        """
+        Compute bandwidth (sigma) for Gaussian kernel based on perplexity.
+        Similar to t-SNE perplexity tuning.
+        
+        Args:
+            distances: np.array of shape (n_points, k) - distances to k neighbors
+            perplexity: target perplexity value
+        
+        Returns:
+            sigmas: np.array of shape (n_points,)
+        """
+        mode = "class_external"
+        
+        if distances==None:
+            mode = "class_internal"
+            distances = self.distance_table
+        if perplexity==None:
+            perplexity=self.perplexity
+            
+        target_entropy = np.log(perplexity)
+        
+        def compute_entropy(sigma, dists):
+            """Compute entropy given sigma."""
+            # Gaussian kernel
+            p = np.exp(-dists**2 / (2 * sigma**2))
+            p = p / (np.sum(p) + 1e-10)
+            entropy = -np.sum(p * np.log(p + 1e-10))
+            return entropy
+        
+        sigmas = []
+        for i in range(distances.shape[0]):
+            dists = distances[i]
+            
+            # Binary search for sigma
+            sigma_min, sigma_max = 0.01, 1000.0
+            sigma = 1.0
+            
+            for _ in range(50):  # max iterations
+                entropy = compute_entropy(sigma, dists)
+                
+                if abs(entropy - target_entropy) < 1e-5:
+                    break
+                
+                if entropy > target_entropy:
+                    sigma_max = sigma
+                    sigma = (sigma + sigma_min) / 2
+                else:
+                    sigma_min = sigma
+                    sigma = (sigma + sigma_max) / 2
+            
+            sigmas.append(sigma)
+        
+        if mode == "class_internal":
+            self.sigmas = np.array(sigmas)
+        elif mode == "class_external":
+            return np.array(sigmas)
+
+
+
+    def get_affinities(self, var_tens=None, edges_indices=None, sigmas=None):
+        """
+        Compute local affinity matrix using per-point sigma values.
+
+        Args:
+            var_tens (Tensor): [N, D] input features
+            edges (LongTensor): [2, E] edge list, edges[:,0] = source, edges[:,1] = target
+            sigmas (Tensor): [N] per-point sigma values for each source node
+
+        Returns:
+            Tensor: [N, k] affinity values (p_j|i) normalized per source node
+        """
+        
+        mode = "class_external"
+        if var_tens==None:
+            mode = "class_internal"
+            var_tens=self.normed_values
+        if edges_indices==None:
+            edges_indices=self.edge_indices
+        if sigmas==None:
+            self.get_sigmas()
+            sigmas=self.sigmas
+        
+        eps = 1e-6
+        
+        # Get node embeddings for source and target
+        x_i = var_tens[edges_indices[0, :]]  # [E, D]
+        x_j = var_tens[edges_indices[1, :]]  # [E, D]
+        sigma_i = sigmas[edges_indices[0, :]]  # [E]
+        
+        # Compute squared distances
+        sqdist = torch.sum((x_i - x_j) ** 2, dim=1)
+        
+        # Compute affinities using Gaussian kernel with per-point sigma
+        denom = 2 * sigma_i ** 2 + eps
+        v = torch.exp(-sqdist / denom)  # [E]
+        
+        # Group v into rows of shape [N, k]
+        N = var_tens.shape[0]
+        k = v.numel() // N
+        v = v.view(N, k)
+        
+        # Normalize to get conditional probabilities p_j|i
+        p = v / (v.sum(dim=1, keepdim=True) + eps)  # [N, k]
+        
+        self.input_affinities = p
+        if mode == "class_internal":
+            self.input_affinities = p
+        elif mode == "class_external":
+            return p
+
+
+    def sample_graph(self):
+        self.generate_normed_sample() # sample subset 
+        self.get_edge_attributes()
+        self.get_node_features()
+        self.get_affinities()
+        self.graph = Data(x=self.node_features, edge_index=self.edge_indices, edge_attr=self.edge_attributes, input_affinities=self.input_affinities, sigmas=self.sigmas, gps=self.gps, source=os.path.join(self.data_folder_path, self.filename))
+
+
+    def cross_edges(self):
+        
+
+    def sample_input_graph(self):
+        pass
+
+
+    def sample_output_graph(self):
+        pass
+
+
+    def
+
+
+# %% Associated workflow:
+# TODO: this should be summarized to an additional funciton in the end
+Generator = AlphaEarth_Graph_Generator(sample_config) 
+Generator.load_subregion()
+Generator.sample_graph()
+
+# %% subgraph workflow
+Generator = AlphaEarth_Graph_Generator(sample_config) 
+# 1. sample output graph with or without channel interpolation (store it, e.g. skip creating it when alreay exists)
+# 2. sample input graph 
+# 3. establish cross connections: knn, edges, edge_attr, ...
+
+
+
+
+
+# %%
+class GraphLMDBWriter:
+    def __init__(self, db_path, map_size=int(1e12)):
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self.env = lmdb.open(db_path, map_size=map_size)
+        
+        with self.env.begin(write=True) as txn:
+            raw_len = txn.get(b'__len__')
+            self.length = int(raw_len.decode()) if raw_len else 0
+
+    def append(self, data: Data):
+        with self.env.begin(write=True) as txn:
+            txn.put(str(self.length).encode(), pickle.dumps(data))
+            self.length += 1
+            txn.put(b'__len__', str(self.length).encode())
+
+    def close(self):
+        self.env.close()
+
+# %%
+
+dataset_config = {
+    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
+    "k": 5,
+    "k_out": 5,
+    "k_cross": 3,
+    "perplexity": 15,
+    "n_points_input_min": 1000,
+    "n_points_input_max": 2000,
+    "n_points_lat_out": 100,
+    "n_points_lon_out": 100,
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 100,
+    "lat_min": 59.66,
+    "lat_max": 59.73,
+    "lon_min": 10.79,
+    "lon_max": 10.86,
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "cache_region_data": True
+    }
+
+sample_config = {
+    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data",
+    "filename": "sat_emb_2018.tif",
+    "bbox": (10.79, 59.66, 10.86, 59.73),
+    "k": 5,
+    "perplexity": 20,
+    "N":100,
+    "include_feat_diff":True,
+    "generator_method": "random"
+}
+
+# %%
+def create_dataset(data_folder, dates, n_samples, n_points):
+    for BLABLANBLA:
+        sam
+# %%

@@ -1,0 +1,13 @@
+{
+    "k_in": 8,
+    "k_out": 8,
+    "k_cross": 4,
+    "perplexity": 10,
+    "n_points_input_min": 200,
+    "n_points_input_max": 500,
+    "n_points_lat_out": 10,
+    "n_points_lon_out": 10,
+    "samples_per_date": 2,
+    "vars": ["w", "v", "z", "q"],
+    "dates": ["2018-01-01", "2018-01-02"]
+}

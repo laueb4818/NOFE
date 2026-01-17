@@ -1,0 +1,29 @@
+Test dataset: 30 samples
+Train dataset: 300 samples
+Train samples: 300
+Val samples (from test set): 30
+
+Model: KernelNN
+  Width: 24
+  Depth: 4
+  Parameters: 31917
+
+============================================================
+Starting training...
+============================================================
+
+Epoch 1/4 - Training: 73/300
+Traceback (most recent call last):
+  File "/Volumes/T7-storage/NOFE/src/train.py", line 341, in <module>
+    main()
+  File "/Volumes/T7-storage/NOFE/src/train.py", line 240, in main
+    q = get_output_affinities(out, batch.edge_index)
+  File "/Volumes/T7-storage/NOFE/src/utilities.py", line 199, in get_output_affinities
+    w = transition_prob_t_dist(output[edges[0,:]], output[edges[1,:]])
+  File "/Volumes/T7-storage/NOFE/src/utilities.py", line 184, in transition_prob_t_dist
+    return 1 / (1 + torch.sum((a - b) ** 2, dim=-1))
+  File "/Users/laueb4818/miniforge3/envs/neural-operators/lib/python3.9/site-packages/torch/_tensor.py", line 40, in wrapped
+    return f(*args, **kwargs)
+  File "/Users/laueb4818/miniforge3/envs/neural-operators/lib/python3.9/site-packages/torch/_tensor.py", line 945, in __rdiv__
+    return self.reciprocal() * other
+KeyboardInterrupt

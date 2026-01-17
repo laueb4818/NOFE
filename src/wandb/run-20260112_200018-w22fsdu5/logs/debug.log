@@ -1,0 +1,29 @@
+2026-01-12 20:00:18,738 INFO    MainThread:64251 [wandb_setup.py:_flush():68] Current SDK version is 0.19.2
+2026-01-12 20:00:18,739 INFO    MainThread:64251 [wandb_setup.py:_flush():68] Configure stats pid to 64251
+2026-01-12 20:00:18,739 INFO    MainThread:64251 [wandb_setup.py:_flush():68] Loading settings from /Users/laueb4818/.config/wandb/settings
+2026-01-12 20:00:18,739 INFO    MainThread:64251 [wandb_setup.py:_flush():68] Loading settings from /Volumes/T7-storage/NOFE/src/wandb/settings
+2026-01-12 20:00:18,739 INFO    MainThread:64251 [wandb_setup.py:_flush():68] Loading settings from environment variables
+2026-01-12 20:00:18,740 INFO    MainThread:64251 [wandb_init.py:_log_setup():523] Logging user logs to /Volumes/T7-storage/NOFE/src/wandb/run-20260112_200018-w22fsdu5/logs/debug.log
+2026-01-12 20:00:18,740 INFO    MainThread:64251 [wandb_init.py:_log_setup():524] Logging internal logs to /Volumes/T7-storage/NOFE/src/wandb/run-20260112_200018-w22fsdu5/logs/debug-internal.log
+2026-01-12 20:00:18,740 INFO    MainThread:64251 [wandb_init.py:init():641] calling init triggers
+2026-01-12 20:00:18,740 INFO    MainThread:64251 [wandb_init.py:init():647] wandb.init called with sweep_config: {}
+config: {'dataset_id': 'example_config', 'model_id': 'example_model', 'epochs': 4, 'batch_size': 1, 'learning_rate': 1e-05, 'scheduler_step': 5, 'scheduler_gamma': 0.8, 'width': 24, 'ker_width': 42, 'depth': 4, 'node_features': 12, 'edge_attr': 21, 'out_width': 3, 'n_points_min': 500, 'n_points_max': 2000, 'samples_per_date': 2, 'k': 30, 'perplexity': 10, 'lifting_bool': False, 'include_positions': False, 'vars': ['w', 'v', 'z', 'q', 'r', 't', 'cc', 'd', 'o3', 'pv', 'u', 'vo'], 'dates': ['2018-01-01', '2018-01-02']}
+2026-01-12 20:00:18,740 INFO    MainThread:64251 [wandb_init.py:init():674] starting backend
+2026-01-12 20:00:20,272 INFO    MainThread:64251 [wandb_init.py:init():678] sending inform_init request
+2026-01-12 20:00:20,336 INFO    MainThread:64251 [backend.py:_multiprocessing_setup():104] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2026-01-12 20:00:20,337 INFO    MainThread:64251 [wandb_init.py:init():693] backend started and connected
+2026-01-12 20:00:20,340 INFO    MainThread:64251 [wandb_init.py:init():786] updated telemetry
+2026-01-12 20:00:20,340 INFO    MainThread:64251 [wandb_init.py:init():818] communicating run to backend with 90.0 second timeout
+2026-01-12 20:00:21,732 INFO    MainThread:64251 [wandb_init.py:init():868] starting run threads in backend
+2026-01-12 20:00:23,993 INFO    MainThread:64251 [wandb_run.py:_console_start():2415] atexit reg
+2026-01-12 20:00:23,993 INFO    MainThread:64251 [wandb_run.py:_redirect():2265] redirect: wrap_raw
+2026-01-12 20:00:23,994 INFO    MainThread:64251 [wandb_run.py:_redirect():2330] Wrapping output streams.
+2026-01-12 20:00:23,994 INFO    MainThread:64251 [wandb_run.py:_redirect():2355] Redirects installed.
+2026-01-12 20:00:24,001 INFO    MainThread:64251 [wandb_init.py:init():910] run started, returning control to user process
+2026-01-12 20:00:28,548 INFO    MainThread:64251 [wandb_run.py:_finish():2140] finishing run uit-lars-uebbing/NOFE-era5/w22fsdu5
+2026-01-12 20:00:28,548 INFO    MainThread:64251 [wandb_run.py:_atexit_cleanup():2380] got exitcode: 0
+2026-01-12 20:00:28,548 INFO    MainThread:64251 [wandb_run.py:_restore():2362] restore
+2026-01-12 20:00:28,548 INFO    MainThread:64251 [wandb_run.py:_restore():2368] restore done
+2026-01-12 20:00:31,473 INFO    MainThread:64251 [wandb_run.py:_footer_history_summary_info():3984] rendering history
+2026-01-12 20:00:31,474 INFO    MainThread:64251 [wandb_run.py:_footer_history_summary_info():4016] rendering summary
+2026-01-12 20:00:31,483 INFO    MainThread:64251 [wandb_run.py:_footer_sync_info():3945] logging synced files

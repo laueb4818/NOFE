@@ -1,0 +1,27 @@
+Test dataset: 2 samples
+Train dataset: 4 samples
+Train samples: 3
+Val samples: 1
+
+Model: KernelNN
+  Width: 24
+  Depth: 4
+  Parameters: 28485
+
+============================================================
+Starting training...
+============================================================
+
+Epoch 1/4 - Training: 3/3
+Epoch: 1/4 - Loss: 885.1922	|  Val Loss: 605.1085	|  LR: 1e-05	|  Time: 00:03
+Epoch 2/4 - Training: 3/3
+Epoch: 2/4 - Loss: 885.1889	|  Val Loss: 605.1061	|  LR: 1e-05	|  Time: 00:00
+Epoch 3/4 - Training: 3/3
+Epoch: 3/4 - Loss: 885.186	|  Val Loss: 605.1038	|  LR: 1e-05	|  Time: 00:00
+Epoch 4/4 - Training: 3/3
+Epoch: 4/4 - Loss: 885.1832	|  Val Loss: 605.1014	|  LR: 1e-05	|  Time: 00:00
+
+============================================================
+✓ Training complete!
+Model saved: example_model-2026-01-12_t20-00-17
+============================================================

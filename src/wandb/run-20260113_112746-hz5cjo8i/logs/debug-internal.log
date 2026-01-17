@@ -1,0 +1,11 @@
+{"time":"2026-01-13T11:27:47.002351Z","level":"INFO","msg":"stream: starting","core version":"0.19.2","symlink path":"/Volumes/T7-storage/NOFE/src/wandb/run-20260113_112746-hz5cjo8i/logs/debug-core.log"}
+{"time":"2026-01-13T11:27:47.112012Z","level":"INFO","msg":"created new stream","id":"hz5cjo8i"}
+{"time":"2026-01-13T11:27:47.112058Z","level":"INFO","msg":"stream: started","id":"hz5cjo8i"}
+{"time":"2026-01-13T11:27:47.112075Z","level":"INFO","msg":"handler: started","stream_id":"hz5cjo8i"}
+{"time":"2026-01-13T11:27:47.112109Z","level":"INFO","msg":"writer: Do: started","stream_id":"hz5cjo8i"}
+{"time":"2026-01-13T11:27:47.112102Z","level":"INFO","msg":"sender: started","stream_id":"hz5cjo8i"}
+{"time":"2026-01-13T11:27:47.462152Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2026-01-13T11:28:08.400949Z","level":"INFO","msg":"stream: closing","id":"hz5cjo8i"}
+{"time":"2026-01-13T11:28:08.400967Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2026-01-13T11:28:08.401334Z","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2026-01-13T11:28:11.872006Z","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}

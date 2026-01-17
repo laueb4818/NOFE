@@ -1,0 +1,10 @@
+{
+    "n_points_min": 500,
+    "n_points_max": 2000,
+    "samples_per_date": 2,
+    "k": 30,
+    "perplexity": 10,
+    "include_positions": false,
+    "vars": ["w", "v", "z", "q", "r", "t", "cc", "d", "o3", "pv", "u", "vo"],
+    "dates": ["2018-01-01","2018-01-02"]
+}

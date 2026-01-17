@@ -1,0 +1,12 @@
+{
+    "n_points_min": 100,
+    "n_points_max": 200,
+    "samples_per_year": 1,
+    "k": 5,
+    "perplexity": 3,
+    "lat_min": 59.0,
+    "lat_max": 60.5,
+    "lon_min": 10.0,
+    "lon_max": 11.0,
+    "years": [2018]
+}

@@ -1,0 +1,15 @@
+{"time":"2026-01-13T11:25:11.551692Z","level":"INFO","msg":"stream: starting","core version":"0.19.2","symlink path":"/Volumes/T7-storage/NOFE/src/wandb/run-20260113_112510-yrje7cek/logs/debug-core.log"}
+{"time":"2026-01-13T11:25:11.666434Z","level":"INFO","msg":"created new stream","id":"yrje7cek"}
+{"time":"2026-01-13T11:25:11.666489Z","level":"INFO","msg":"stream: started","id":"yrje7cek"}
+{"time":"2026-01-13T11:25:11.666559Z","level":"INFO","msg":"writer: Do: started","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:11.666606Z","level":"INFO","msg":"sender: started","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:11.666694Z","level":"INFO","msg":"handler: started","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:12.214763Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2026-01-13T11:25:14.575369Z","level":"INFO","msg":"stream: closing","id":"yrje7cek"}
+{"time":"2026-01-13T11:25:14.575399Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2026-01-13T11:25:14.575777Z","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2026-01-13T11:25:17.482609Z","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2026-01-13T11:25:21.023777Z","level":"INFO","msg":"handler: closed","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:21.023828Z","level":"INFO","msg":"writer: Close: closed","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:21.023924Z","level":"INFO","msg":"sender: closed","stream_id":"yrje7cek"}
+{"time":"2026-01-13T11:25:21.025178Z","level":"INFO","msg":"stream: closed","id":"yrje7cek"}

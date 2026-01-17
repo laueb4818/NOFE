@@ -1,0 +1,10 @@
+{"time":"2026-01-13T11:35:10.318821Z","level":"INFO","msg":"stream: starting","core version":"0.19.2","symlink path":"/Volumes/T7-storage/NOFE/src/wandb/run-20260113_113510-tp4h6on6/logs/debug-core.log"}
+{"time":"2026-01-13T11:35:10.42995Z","level":"INFO","msg":"created new stream","id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:10.429997Z","level":"INFO","msg":"stream: started","id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:10.430007Z","level":"INFO","msg":"writer: Do: started","stream_id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:10.43003Z","level":"INFO","msg":"sender: started","stream_id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:10.430039Z","level":"INFO","msg":"handler: started","stream_id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:17.619255Z","level":"INFO","msg":"Starting system monitor"}
+{"time":"2026-01-13T11:35:39.267653Z","level":"INFO","msg":"stream: closing","id":"tp4h6on6"}
+{"time":"2026-01-13T11:35:39.267695Z","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2026-01-13T11:35:39.268239Z","level":"INFO","msg":"Stopped system monitor"}

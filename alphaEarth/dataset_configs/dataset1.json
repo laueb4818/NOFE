@@ -1,0 +1,16 @@
+{
+    "n_points_min": 200,
+    "n_points_max": 500,
+    "k": 8,
+    "perplexity": 4,
+    "bbox_size_deg": null,
+    "lat_min": 59.55,
+    "lat_max": 59.75,
+    "lon_min": 10.65,
+    "lon_max": 10.9,
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 30,
+    "cache_region_data": true
+}

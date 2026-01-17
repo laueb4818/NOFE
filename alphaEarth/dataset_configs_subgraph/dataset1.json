@@ -1,0 +1,19 @@
+{
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 3,
+    "perplexity": 15,
+    "n_points_input_min": 1000,
+    "n_points_input_max": 2000,
+    "n_points_lat_out": 100,
+    "n_points_lon_out": 100,
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 100,
+    "lat_min": 59.66,
+    "lat_max": 59.73,
+    "lon_min": 10.79,
+    "lon_max": 10.86,
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "cache_region_data": true
+}

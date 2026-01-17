@@ -1,0 +1,10 @@
+{
+    "dataset_id": "dataset2",
+    "model_id": "model1",
+    "epochs": 30,
+    "batch_size": 1,
+    "learning_rate": 0.00001,
+    "scheduler_step": 4,
+    "scheduler_gamma": 0.8
+}
+

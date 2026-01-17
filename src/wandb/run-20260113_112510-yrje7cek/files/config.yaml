@@ -1,0 +1,87 @@
+_wandb:
+    value:
+        cli_version: 0.19.2
+        m: []
+        python_version: 3.9.20
+        t:
+            "1":
+                - 1
+                - 55
+                - 77
+                - 105
+            "2":
+                - 1
+                - 55
+                - 77
+                - 105
+            "3":
+                - 13
+                - 16
+                - 23
+                - 55
+            "4": 3.9.20
+            "5": 0.19.2
+            "8":
+                - 5
+            "12": 0.19.2
+            "13": darwin-arm64
+batch_size:
+    value: 1
+bbox_size_deg:
+    value: null
+cache_region_data:
+    value: true
+dataset_id:
+    value: dataset1
+depth:
+    value: 4
+edge_attr:
+    value: 21
+epochs:
+    value: 4
+k:
+    value: 8
+ker_width:
+    value: 42
+lat_max:
+    value: 59.75
+lat_min:
+    value: 59.55
+learning_rate:
+    value: 1e-05
+lifting_bool:
+    value: false
+lon_max:
+    value: 10.9
+lon_min:
+    value: 10.65
+model_id:
+    value: model1
+n_points_max:
+    value: 500
+n_points_min:
+    value: 200
+node_features:
+    value: 128
+out_width:
+    value: 3
+perplexity:
+    value: 4
+scheduler_gamma:
+    value: 0.8
+scheduler_step:
+    value: 5
+test_samples_per_year:
+    value: 30
+test_years:
+    value:
+        - 2021
+train_samples_per_year:
+    value: 100
+train_years:
+    value:
+        - 2018
+        - 2019
+        - 2020
+width:
+    value: 24
