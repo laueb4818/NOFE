@@ -64,118 +64,24 @@ from utilities_alphaearth import (
     set_seed,
 )
 
-# %%
-
-def print_subgraph_summary(config_name, train_years, test_years, config):
-    """Print summary of subgraph dataset configuration."""
-    total_years = len(train_years) + len(test_years)
-    
-    # Determine if using manual or automatic split
-    has_manual_split = 'train_years' in config and 'test_years' in config
-    
-    if has_manual_split:
-        train_samples = config['train_samples_per_year']
-        test_samples = config['test_samples_per_year']
-    else:
-        train_samples = config.get('samples_per_year')
-        test_samples = config.get('samples_per_year')
-    
-    print("=" * 60)
-    print(f"Subgraph Dataset Configuration: {config_name}")
-    print("=" * 60)
-    print(f"Total years:          {total_years}")
-    print(f"  Training years:     {len(train_years)}")
-    print(f"  Test years:         {len(test_years)}")
-    if has_manual_split:
-        print(f"Samples per year:     train={train_samples}, test={test_samples}")
-        print(f"  Total train samples: {len(train_years) * train_samples}")
-        print(f"  Total test samples:  {len(test_years) * test_samples}")
-    else:
-        print(f"Samples per year:     {train_samples}")
-        print(f"  Total train samples: {len(train_years) * train_samples}")
-        print(f"  Total test samples:  {len(test_years) * test_samples}")
-    print(f"\nGraph parameters:")
-    print(f"  k_in (input):       {config['k_in']}")
-    print(f"  k_out (output):     {config['k_out']}")
-    print(f"  k_cross (cross):    {config['k_cross']}")
-    print(f"  Perplexity:         {config['perplexity']}")
-    print(f"  Input nodes:        {config['n_points_input_min']}-{config['n_points_input_max']} (random)")
-    
-    if 'lat_min' in config and 'lat_max' in config and 'lon_min' in config and 'lon_max' in config:
-        print(f"\nRegion bounds:")
-        print(f"  Latitude:           [{config['lat_min']}, {config['lat_max']}]")
-        print(f"  Longitude:          [{config['lon_min']}, {config['lon_max']}]")
-    
-    print(f"\nYears: {', '.join(map(str, train_years + test_years))}")
-    print("=" * 60 + "\n")
-
-
-
-
-# %% Testing around
-
-graph_config={
-    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
-    "k_in": 5,
-    "k_out": 5,
-    "k_cross": 3,
-    "perplexity": 15,
-    "n_points_input_min": 1000,
-    "n_points_input_max": 2000,
-    "n_points_lat_out": 100,
-    "n_points_lon_out": 100,
-    "train_samples_per_year": 100,
-    "test_samples_per_year": 100,
-    "lat_min": 59.66,
-    "lat_max": 59.73,
-    "lon_min": 10.79,
-    "lon_max": 10.86,
-    "train_years": [2018, 2019, 2020],
-    "test_years": [2021],
-    "cache_region_data": True
-    }
-
-dataset_config = {
-    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
-    "k_in": 5,
-    "k_out": 5,
-    "k_cross": 3,
-    "perplexity": 15,
-    "n_points_input_min": 1000,
-    "n_points_input_max": 2000,
-    "n_points_lat_out": 100,
-    "n_points_lon_out": 100,
-    "train_samples_per_year": 100,
-    "test_samples_per_year": 100,
-    "lat_min": 59.66,
-    "lat_max": 59.73,
-    "lon_min": 10.79,
-    "lon_max": 10.86,
-    "train_years": [2018, 2019, 2020],
-    "test_years": [2021],
-    "cache_region_data": True
-    }
-
-sample_config = {
-    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data",
-    "filename": "sat_emb_2018.tif",
-    "bbox": (10.79, 59.66, 10.86, 59.73),
-    "k": 5
-}
 
 # %% define graph_generator
 class AlphaEarth_Graph_Generator:
     """
     This class will load data from alphaEarth data and is equipped with all functionalities to generate graph samples
     """
-    def __init__(self, sample_config: dict):
-        self.config = sample_config.copy()
+    def __init__(self, file_path:str=None):
+        self.file_path=file_path
+        filename = file_path.split('/')[-1]       # 'sat_emb_2018.tif'
+        self.year = int(filename.split('_')[-1].split('.')[0])
         
+        
+        #self.config = sample_config.copy()
         # Dynamically create attributes for easy access
-        for key, value in sample_config.items():
-            setattr(self, key, value)
+        #for key, value in sample_config.items():
+        #    setattr(self, key, value)
 
-    def load_subregion(self):
+    def load_subregion(self, bbox):
         """
         Load a bounding box from a large GeoTIFF and return as xarray.DataArray.
         
@@ -183,14 +89,14 @@ class AlphaEarth_Graph_Generator:
         self.da will have structure: (channels, latitude, longitude)
         """
         
-        with rasterio.open(os.path.join(self.data_folder_path, self.filename)) as src:
-            if self.bbox is None:
+        with rasterio.open(self.file_path) as src:
+            if bbox is None:
                 # Read the entire raster
                 arr = src.read()  # shape: (bands, height, width)
                 transform = src.transform
             
             else:
-                min_lon, min_lat, max_lon, max_lat = self.bbox
+                min_lon, min_lat, max_lon, max_lat = bbox
                 # compute pixel window inside file
                 window = from_bounds(min_lon, min_lat, max_lon, max_lat, src.transform)
                 
@@ -218,8 +124,8 @@ class AlphaEarth_Graph_Generator:
         mean = arr.mean(axis=(1,2), keepdims=True)
         std = arr.std(axis=(1,2), keepdims=True)
         self.da = (arr - mean) / std
-        self.grid_latitudes = np.linspace(self.bbox[1], self.bbox[3], self.da.shape[1])
-        self.grid_longitudes = np.linspace(self.bbox[0], self.bbox[2], self.da.shape[2])
+        self.grid_latitudes = np.linspace(bbox[1], bbox[3], self.da.shape[1])
+        self.grid_longitudes = np.linspace(bbox[0], bbox[2], self.da.shape[2])
         print(f'total number of points in dataset: {self.da.shape[1]*self.da.shape[2]}')
         print(f'self.da.shape: {self.da.shape}')
         print(f'grid_latitudes.shape: {self.grid_latitudes.shape}')
@@ -458,162 +364,6 @@ class AlphaEarth_Graph_Generator:
         return edge_attributes
 
 
-    '''
-    def knn(self, X:np.ndarray=None, k:int=None):
-        """
-        Docstring for knn
-        
-        :param self: Description
-        :param k: Description
-        :type k: int
-        :param X: Description
-        """
-        #if X==None:
-        #    X = self.normed_coords
-        #X = X.astype('float32')
-        #if k == None:
-        #    k=self.k
-        
-        N, D = X.shape
-        index = faiss.IndexFlatL2(D)  # L2 distance index (Euclidean)
-        index.add(X)
-        
-        # Search for k+1 neighbors to exclude the point itself (first neighbor is always self)
-        distances, indices = index.search(X, k + 1)
-        
-        # Exclude self-match
-        distance_table = distances[:, 1:]
-        neighbor_table = indices[:, 1:]
-        
-        return distance_table, neighbor_table
-    '''
-
-
-    '''
-    def build_edge_index(self, distance_table:np.ndarray=None, neighbor_table:np.ndarray=None):
-        """
-        Build PyTorch Geometric edge_index for incoming kNN graph.
-        """
-        N, k = neighbor_table.shape
-        
-        # Each query node connects to its neighbors
-        src = np.repeat(np.arange(N), k)  # query nodes
-        dst = neighbor_table.reshape(-1)  # neighbors
-        # Stack into PyG format
-        edge_indices = torch.tensor(
-            np.vstack([src, dst]),
-            dtype=torch.long
-        )
-        # distance attribute per edge
-        edge_dist = distance_table.reshape(-1, 1)
-
-        
-        return edge_indices, edge_dist
-    '''
-
-
-    '''   
-    # test replacement of above method:
-    def build_cross_edge_index(
-            distance_table: np.ndarray,
-            neighbor_table: np.ndarray
-        ):
-        """
-        Build edge_index for cross-kNN graph.
-        
-        Semantics:
-        - A (reference set) = SOURCE nodes (send messages)
-        - B (query set)     = TARGET nodes (receive messages)
-        
-        edge_index[0] -> indices into A  (sources)
-        edge_index[1] -> indices into B  (targets)
-        """
-        
-        N_B, k = neighbor_table.shape  # number of target nodes (B)
-        
-        # SOURCE nodes: k nearest neighbors in A for each B
-        src = neighbor_table.reshape(-1)           # shape: (N_B * k,)
-        
-        # TARGET nodes: each B node repeated k times
-        dst = np.repeat(np.arange(N_B), k)          # shape: (N_B * k,)
-        
-        edge_index = torch.tensor(
-            np.vstack([src, dst]),
-            dtype=torch.long
-        )
-        
-        edge_dist = distance_table.reshape(-1, 1)
-        
-        return edge_index, edge_dist
-    '''
-
-    '''
-    def get_cross_edge_attributes(self, 
-                            source_normed_coords:np.ndarray=None, 
-                            target_normed_coords:np.ndarray=None,
-                            edge_indices:torch.Tensor=None, 
-                            edge_dist:np.ndarray=None,
-                            distance_table:np.ndarray=None,
-                            k:int=None,
-                            include_feat_diff:bool=False):
-        
-        # target node positions
-        node_pos = target_normed_coords[edge_indices[1,:]]
-        
-        max_neighbor_dists = np.repeat(distance_table[:,k-1], k)
-        regularized_distances = edge_dist.squeeze()/max_neighbor_dists
-        regularized_distances = regularized_distances[:, np.newaxis] 
-        
-        # normed displacement vector
-        source_nodes = source_normed_coords[edge_indices[0,:]]
-        target_nodes = target_normed_coords[edge_indices[1,:]]
-        absolute_displacement = source_nodes - target_nodes
-        normed_displacement = absolute_displacement / np.linalg.norm(absolute_displacement, axis=1, keepdims=True)
-        
-        # NOTE optionally include date encoding, etc.
-        if include_feat_diff:
-            print('including feature difference not yet implemented. Continuing without')
-        
-        # bind it all together and make it a tensor
-        edge_attributes = np.hstack([node_pos, normed_displacement, regularized_distances])
-        edge_attributes = torch.tensor(edge_attributes)
-        
-        return edge_attributes
-    '''
-
-
-    '''
-    def get_edge_attributes(self, normed_coords:np.ndarray=None, 
-                            edge_indices:torch.Tensor=None, 
-                            edge_dist:np.ndarray=None,
-                            distance_table:np.ndarray=None,
-                            k:int=None,
-                            include_feat_diff:bool=False):
-        
-        # target node positions
-        node_pos = normed_coords[edge_indices[1,:]]
-        
-        max_neighbor_dists = np.repeat(distance_table[:,k-1], k)
-        regularized_distances = edge_dist.squeeze()/max_neighbor_dists
-        regularized_distances = regularized_distances[:, np.newaxis] 
-        
-        # normed displacement vector
-        source_nodes = normed_coords[edge_indices[0,:]]
-        target_nodes = normed_coords[edge_indices[1,:]]
-        absolute_displacement = source_nodes - target_nodes
-        normed_displacement = absolute_displacement / np.linalg.norm(absolute_displacement, axis=1, keepdims=True)
-        
-        # NOTE optionally include date encoding, etc.
-        if include_feat_diff:
-            print('including feature difference not yet implemented. Continuing without')
-        
-        # bind it all together and make it a tensor
-        edge_attributes = np.hstack([node_pos, normed_displacement, regularized_distances])
-        edge_attributes = torch.tensor(edge_attributes)
-        
-        return edge_attributes
-    '''
-
     def get_node_features(self, normed_coords:np.ndarray=None, normed_values:torch.Tensor=None, include_pos:bool=True):
         if include_pos:
             pos_tensor = torch.tensor(normed_coords)
@@ -635,16 +385,6 @@ class AlphaEarth_Graph_Generator:
         Returns:
             sigmas: np.array of shape (n_points,)
         """
-        
-        '''
-        mode = "class_external"
-        
-        if distances==None:
-            mode = "class_internal"
-            distances = self.distance_table
-        if perplexity==None:
-            perplexity=self.perplexity
-        '''
         
         target_entropy = np.log(perplexity)
         
@@ -695,17 +435,6 @@ class AlphaEarth_Graph_Generator:
         Returns:
             Tensor: [N, k] affinity values (p_j|i) normalized per source node
         """
-        '''
-        mode = "class_external"
-        if var_tens==None:
-            mode = "class_internal"
-            var_tens=self.normed_values
-        if edges_indices==None:
-            edges_indices=self.edge_indices
-        if sigmas==None:
-            self.get_sigmas()
-            sigmas=self.sigmas
-        '''
         
         eps = 1e-6
         
@@ -732,7 +461,7 @@ class AlphaEarth_Graph_Generator:
         return sigmas, p #input affinities
 
 
-    def sample_graph(self, N:int=None, k:int=None, perplexity:int=None, sampling_method:str="random"):
+    def sample_graph(self, N:int=None, k:int=None, perplexity:int=None, sampling_method:str="random", nodeFeat_include_pos:bool=False):
         normed_values, gps = self.generate_normed_sample(N=N, method=sampling_method) # sample subset 
         cartesian = self.cartesian_projection(lat=gps[:, 0], lon=gps[:, 1]) # get 3 dim. cartesian coordinates for sample locations
         normed_coords = self.norm_coords(cartesian=cartesian) # norm coordinates based on subregion
@@ -752,23 +481,11 @@ class AlphaEarth_Graph_Generator:
                             distance_table=distance_table,
                             k=k,
                             include_feat_diff=False)
-        node_features = self.get_node_features(normed_coords=normed_coords, normed_values=normed_values, include_pos=self.nodeFeat_include_pos)
+        node_features = self.get_node_features(normed_coords=normed_coords, normed_values=normed_values, include_pos=nodeFeat_include_pos)
         sigmas = self.get_sigmas(distance_table=distance_table, perplexity=perplexity)
         input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
-        return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, input_affinities=input_affinities, sigmas=sigmas, gps=gps, normed_coords=normed_coords, source=os.path.join(self.data_folder_path, self.filename))
+        return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, input_affinities=input_affinities, sigmas=sigmas, gps=gps, normed_coords=normed_coords, year=self.year)
 
-
-    #def cross_knn(self, A, B, k):
-    #    # 1. Build index
-    #    index = faiss.IndexFlatL2(A.shape[1])  # L2 distance
-    #    index.add(A)  # add reference points
-    #    
-    #    # 2. Search
-    #    D, I = index.search(B, k)
-    #    distance_table = D
-    #    neighbor_table = I
-    #    
-    #    return distance_table, neighbor_table
 
 
     def connect_graphs(self, in_graph:Data=None, out_graph:Data=None, k_cross:int=None):
@@ -799,19 +516,18 @@ class AlphaEarth_Graph_Generator:
         #                                                        distance_table=cross_distance_table,
         #                                                        k=k_cross,
         #                                                        include_feat_diff=False)
-        
+        print(in_graph.normed_coords.shape)
         cross_graph = Data(edges_in=in_graph.edge_attr,
                            vert_in_features=in_graph.x,
                            vert_in=in_graph.normed_coords,
                            vert_out_features=out_graph.x,
                            vert_out_gps=out_graph.gps,
-                           year=int(out_graph.source.split('_')[-1].split('.')[0]),
+                           year=out_graph.year,
                            vert_out=out_graph.normed_coords,
                            edges_out=out_graph.edge_attr,
                            cross_edge_idx=cross_edge_indices,
                            sigmas=out_graph.sigmas,
                            input_affinities=out_graph.input_affinities,
-                           filename=out_graph.source,
                            cross_edges=cross_edge_attributes,
                            edge_idx_in=in_graph.edge_index,
                            edge_idx_out=out_graph.edge_index,
@@ -830,278 +546,10 @@ class AlphaEarth_Graph_Generator:
             print(f'{s+1}/{n_samples}')
             in_graph = self.sample_graph(N=N_in, k=k_in, perplexity=perplexity, sampling_method=input_sampling_method)
             cross_graph = self.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=k_cross)
+            print(cross_graph.vert_in.shape)
             graph_list.append(cross_graph)
         
         return graph_list
-
-# %%
-
-
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-Generator.load_subregion()
-graph1 = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="random")
-graph2 = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="regular_subset")
-
-# %%
-
-
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-Generator.load_subregion()
-#graph = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="regular_subset")
-
-subgraph_list = Generator.cross_graph_sampling(n_samples=100, perplexity=20, k_cross=10,
-                             N_in=1000, k_in=10, input_sampling_method="random",
-                             N_out=2000, k_out=10, output_sampling_method="regular_subset")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# %%
-
-dataset_config = {
-    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
-    "k": 5,
-    "k_out": 5,
-    "k_cross": 3,
-    "perplexity": 15,
-    "n_points_input_min": 1000,
-    "n_points_input_max": 2000,
-    "n_points_lat_out": 100,
-    "n_points_lon_out": 100,
-    "train_samples_per_year": 100,
-    "test_samples_per_year": 100,
-    "lat_min": 59.66,
-    "lat_max": 59.73,
-    "lon_min": 10.79,
-    "lon_max": 10.86,
-    "train_years": [2018, 2019, 2020],
-    "test_years": [2021],
-    "cache_region_data": True
-    }
-
-
-sample_config = {
-    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data",
-    "filename": "sat_emb_2018.tif",
-    "bbox": (10.79, 59.66, 10.86, 59.73),
-    "include_feat_diff":True,
-    "nodeFeat_include_pos":True
-}
-
-cross_graph_config = {
-    
-}
-
-# %% Associated workflow:
-# TODO: this should be summarized to an additional funciton in the end
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-Generator.load_subregion()
-#graph = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="regular_subset")
-
-subgraph_list = Generator.cross_graph_sampling(n_samples=10, perplexity=20, k_cross=10,
-                             N_in=1000, k_in=10, input_sampling_method="random",
-                             N_out=2000, k_out=10, output_sampling_method="regular_subset")
-
-
-
-
-
-
-
-# %% test cross_knn
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-Generator.load_subregion()
-graph_A = Generator.sample_graph(N=10, k=2, perplexity=20, sampling_method="random")
-graph_B = Generator.sample_graph(N=10, k=2, perplexity=20, sampling_method="regular_subset")
-A=graph_A.normed_coords
-B=graph_B.normed_coords
-
-
-def cross_knn(A, B, k):
-    # 1. Build index
-    index = faiss.IndexFlatL2(A.shape[1])  # L2 distance
-    index.add(A)  # add reference points
-
-    # 2. Search
-    D, I = index.search(B, k)
-
-    return D, I
-
-D, I = cross_knn(A = A, B = B, k=2)
-
-
-
-
-
-#%%
-
-
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-def plot_knn_edges(A: np.ndarray, B: np.ndarray, I: np.ndarray, D: np.ndarray = None, figsize=(10, 8)):
-    """
-    Plot two 3D point clouds (A and B) and draw edges from each B point
-    to its k nearest neighbors in A using the precomputed KNN indices.
-
-    Args:
-        A (np.ndarray): Reference points, shape (NA, 3)
-        B (np.ndarray): Query points, shape (NB, 3)
-        I (np.ndarray): Indices of k nearest neighbors in A for each B, shape (NB, k)
-        D (np.ndarray, optional): Distances to neighbors, shape (NB, k). If provided,
-                                  edge color intensity can be scaled by distance.
-        figsize (tuple): Matplotlib figure size
-    """
-    fig = plt.figure(figsize=figsize)
-    ax = fig.add_subplot(111, projection='3d')
-    
-    # Plot A
-    ax.scatter(A[:,0], A[:,1], A[:,2], color='blue', label='A', alpha=0.6, s=50)
-    
-    # Plot B
-    ax.scatter(B[:,0], B[:,1], B[:,2], color='red', label='B', alpha=0.8, s=50)
-    
-    # Draw edges from B to neighbors in A
-    NB, k = I.shape
-    for b_idx in range(NB):
-        b_point = B[b_idx]
-        for neighbor_rank, a_idx in enumerate(I[b_idx]):
-            a_point = A[a_idx]
-            xs, ys, zs = zip(b_point, a_point)
-            
-            if D is not None:
-                # Optional: scale alpha by distance
-                # shorter edges darker, longer edges lighter
-                max_dist = np.max(D)
-                alpha = 1.0 - (D[b_idx, neighbor_rank] / max_dist) * 0.8
-                alpha = np.clip(alpha, 0.1, 1.0)
-            else:
-                alpha = 0.5
-            
-            ax.plot(xs, ys, zs, color='gray', alpha=alpha)
-    
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    ax.legend()
-    plt.show()
-
-
-
-# %%
-
-def plot_cross_knn_graph(A: np.ndarray, B: np.ndarray, edges: np.ndarray, title="Cross KNN Graph"):
-    """
-    Plot two point clouds A and B in 3D and draw edges from B to their neighbors in A.
-
-    Parameters
-    ----------
-    A : np.ndarray, shape (N_a, 3)
-        Reference points.
-    B : np.ndarray, shape (N_b, 3)
-        Query points.
-    edges : np.ndarray, shape (2, M)
-        Each column [i, j] means B[i] -> A[j].
-    """
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    
-    # Plot points
-    ax.scatter(A[:, 0], A[:, 1], A[:, 2], c='blue', label='A', s=20, alpha=0.7)
-    ax.scatter(B[:, 0], B[:, 1], B[:, 2], c='red', label='B', s=20, alpha=0.7)
-    
-    # Draw edges
-    for b_idx, a_idx in edges.T:  # edges shape = (2, M)
-        b_point = B[int(b_idx)]
-        a_point = A[int(a_idx)]
-        xs, ys, zs = [b_point[0], a_point[0]], [b_point[1], a_point[1]], [b_point[2], a_point[2]]
-        ax.plot(xs, ys, zs, c='gray', alpha=0.5)
-    
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    ax.set_title(title)
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-Generator.load_subregion()
-subgraph_list = Generator.cross_graph_sampling(n_samples=1, perplexity=20, k_cross=2,
-                             N_in=10, k_in=3, input_sampling_method="random",
-                             N_out=20, k_out=3, output_sampling_method="regular_subset")
-
-cross_graph = subgraph_list[0]
-
-
-
-plot_cross_knn_graph(A=cross_graph.vert_in, B=cross_graph.vert_out, edges=cross_graph.cross_edge_idx)
-
-
-
-
-# %% subgraph workflow
-Generator = AlphaEarth_Graph_Generator(sample_config) 
-# 1. sample output graph with or without channel interpolation (store it, e.g. skip creating it when alreay exists)
-# 2. sample input graph 
-# 3. establish cross connections: knn, edges, edge_attr, ...
-
-
-
 
 # %%
 class GraphLMDBWriter:
@@ -1121,9 +569,152 @@ class GraphLMDBWriter:
 
     def close(self):
         self.env.close()
-# %%
-def create_dataset(data_folder, dates, n_samples, n_points):
-    for BLABLANBLA:
-        sam
+
+#%%
+
+Generator = AlphaEarth_Graph_Generator("/Volumes/T7-storage/alphaEarth/data/sat_emb_2018.tif") 
+Generator.load_subregion(bbox=(10.79, 59.66, 10.86, 59.73))
+graph1 = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="random")
+graph2 = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="regular_subset")
+
 # %%
 
+
+Generator = AlphaEarth_Graph_Generator("/Volumes/T7-storage/alphaEarth/data/sat_emb_2018.tif") 
+Generator.load_subregion(bbox=(10.79, 59.66, 10.86, 59.73))
+#graph = Generator.sample_graph(N=1000, k=10, perplexity=20, sampling_method="regular_subset")
+
+subgraph_list = Generator.cross_graph_sampling(n_samples=10, perplexity=20, k_cross=10,
+                             N_in=1000, k_in=10, input_sampling_method="random",
+                             N_out=2000, k_out=10, output_sampling_method="regular_subset")
+
+#%%
+
+
+
+
+dataset_config_simple = {
+    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data/",
+    "dataset_save_path": "../datasets/",
+    "bbox":(10.79, 59.66, 10.86, 59.73),
+    "N": 1000,
+    "k": 10,
+    "perplexity": 10,
+    "sampling_method": "random",
+    "train_years": [2018, 2019, 2020],
+    "test_years": [2021],
+    "train_samples_per_year": 100,
+    "test_samples_per_year": 100,
+}
+
+dataset_config_subgraphs = {
+    
+}
+
+def main(config_path):
+    """
+    Expect 'config_path' as '[config_folder]/[config_id]', e.g. dataset_configs_subgraph/basic
+    :param config: Description
+    """
+    
+    # Open and load the JSON
+    with open(config_path+".json", "r") as f:
+        config = json.load(f)
+    config_id = config_path.split('/')[1]
+    
+    if os.path.exists(f'{config["dataset_save_path"]}/{config_id}_train.lmdb'):
+        print('dataset already exists -- STOP')
+        return()
+    if os.path.exists(f'{config["dataset_save_path"]}/{config_id}_test.lmdb'):
+        print('dataset already exists -- STOP')
+        return()
+    
+    N=config['N']
+    k=config['k']
+    perplexity=config['perplexity']
+    sampling_method=config['sampling_method']
+    
+    # Train Set
+    print('Generate Training Set\n')
+    
+    writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
+    
+    for year in config["train_years"]:
+        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
+        Generator = AlphaEarth_Graph_Generator(file_path) 
+        Generator.load_subregion(bbox=config["bbox"])
+        for n in range(config["train_samples_per_year"]):
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method)
+            writer.append(graph)
+            
+            
+    # Test Set
+    print('\nGenerate Test Set\n')
+    
+    writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
+    
+    for year in config["test_years"]:
+        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
+        Generator = AlphaEarth_Graph_Generator(file_path) 
+        Generator.load_subregion(bbox=config["bbox"])
+        for n in range(config["test_samples_per_year"]):
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method)
+            writer.append(graph)
+
+
+
+
+""" Sanity check for edges
+# %%
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+def plot_3d_points_with_edges(A, B, edges):
+    """
+    Plots 3D points from sets A and B, and draws edges between them.
+    
+    Parameters:
+        A (np.ndarray): (N,3) array of points
+        B (np.ndarray): (M,3) array of points
+        edges (torch.Tensor): (2,E) tensor where edges[0,:] are indices in A and edges[1,:] in B
+    """
+    fig = plt.figure(figsize=(8,6))
+    ax = fig.add_subplot(111, projection='3d')
+    
+    # Plot points
+    ax.scatter(A[:,0], A[:,1], A[:,2], c='blue', label='A', s=50)
+    ax.scatter(B[:,0], B[:,1], B[:,2], c='red', label='B', s=50)
+    
+    # Plot edges
+    for i in range(edges.shape[1]):
+        a_idx = edges[0, i].item()
+        b_idx = edges[1, i].item()
+        x = [A[a_idx,0], B[b_idx,0]]
+        y = [A[a_idx,1], B[b_idx,1]]
+        z = [A[a_idx,2], B[b_idx,2]]
+        ax.plot(x, y, z, c='gray', alpha=0.7)
+    
+    ax.legend()
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
+
+# %%
+Generator = AlphaEarth_Graph_Generator("/Volumes/T7-storage/alphaEarth/data/sat_emb_2018.tif") 
+Generator.load_subregion(bbox=(10.79, 59.66, 10.86, 59.73))
+
+#%%
+subgraph_list = Generator.cross_graph_sampling(n_samples=1, perplexity=20, k_cross=2,
+                             N_in=20, k_in=2, input_sampling_method="random",
+                             N_out=20, k_out=2, output_sampling_method="regular_subset")
+cross_graph=subgraph_list[0]
+
+In=cross_graph.vert_in
+Out=cross_graph.vert_out
+edges=cross_graph.cross_edge_idx
+
+plot_3d_points_with_edges(In, Out, edges)
+
+"""
