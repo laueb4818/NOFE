@@ -98,8 +98,8 @@ def main():
     
     training_config_path = data_dir / "training_configs"
     model_config_path = data_dir / "model_configs"
-    dataset_configs_path = data_dir / "dataset_configs"
-    dataset_path = data_dir / "datasets"
+    dataset_configs_path = data_dir / "dataset_configs/regular"
+    dataset_path = data_dir / "datasets/regular"
     
     # Output paths - project-specific directories
     trained_models_path = data_dir / "trained_models"

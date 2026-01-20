@@ -114,8 +114,8 @@ def main():
     
     training_config_path = data_dir / "training_configs"
     model_config_path = data_dir / "model_configs"
-    dataset_configs_path = data_dir / "dataset_configs_subgraph"
-    dataset_path = data_dir / "datasets_subgraph"
+    dataset_configs_path = data_dir / "dataset_configs/subgraph"
+    dataset_path = data_dir / "datasets/subgraph"
     
     # Output paths - project-specific directories
     trained_models_path = data_dir / "trained_models"
@@ -292,7 +292,8 @@ def main():
             'ep_val_loss': initial_val_loss,
         })
     
-    print(f'\nEpoch: 0/{epochs} - Val Loss: {round(initial_val_loss, 4)} (before training)\n')
+    #print(f'\nEpoch: 0/{epochs} - Val Loss: {round(initial_val_loss, 4)} (before training)\n')
+    print(f'\nEpoch: 0/{epochs} - Val Loss: {initial_val_loss} (before training)\n')
     
     future = None
     
@@ -384,7 +385,8 @@ def main():
             })
         
         print(" " * 120, end="\r")
-        print(f'Epoch: {ep}/{epochs} - Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
+        #print(f'Epoch: {ep}/{epochs} - Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
+        print(f'Epoch: {ep}/{epochs} - Loss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
         
         # Save checkpoint every 5 epochs
         if ep % 5 == 0:

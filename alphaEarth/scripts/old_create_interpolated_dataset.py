@@ -28,7 +28,7 @@ import os
 import argparse
 from pathlib import Path
 
-from utilities_alphaearth import (
+from alphaEarth.scripts.old_utilities_alphaearth import (
     setup_device,
     load_config,
     split_train_test,

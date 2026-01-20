@@ -200,7 +200,7 @@ class KernelNN_subgraph(nn.Module):
         self.conv1 = NNConv_old(width, width, kernel, aggr="mean")
         
         # Separate kernel for cross-edge convolutions (cross_edges have dimension 8)
-        kernel_cross = DenseNet([8, ker_width, ker_width, width**2], nn.ReLU)
+        kernel_cross = DenseNet([ker_in, ker_width, ker_width, width**2], nn.ReLU)
         self.conv_cross = NNConv_old(width, width, kernel_cross, aggr="mean")
 
         self.Proj = nn.Linear(width, out_width)  # nn.Linear(width, 1)
@@ -209,7 +209,7 @@ class KernelNN_subgraph(nn.Module):
         # subgraph of known inputs
         features_a, edge_idx_a, edges_a = data.vert_in_features, data.edge_idx_in, data.edges_in
         # subgraph of prediction nodes
-        features_b, edge_idx_b, edges_b = data.vert_out_features, data.edge_idx_out, data.edges_out
+        features_b, edge_idx_b, edges_b = data.vert_out_features_constructed, data.edge_idx_out, data.edges_out
         # cross graph components
         cross_edges, cross_edge_idx = data.cross_edges, data.cross_edge_idx
 

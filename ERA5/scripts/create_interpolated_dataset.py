@@ -28,7 +28,7 @@ import os
 import argparse
 from pathlib import Path
 
-from utilities_era5 import (
+from ERA5.scripts.utilities_era5_old import (
     setup_device,
     load_config,
     split_train_test,
