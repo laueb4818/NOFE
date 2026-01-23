@@ -85,7 +85,7 @@ def main(config_id): #regular method
     """
     
     # Open and load the JSON
-    with open("../dataset_configs/subgraph/"+config_id+".json", "r") as f:
+    with open("../configurations/subgraph/dataset_configs/"+config_id+".json", "r") as f:
         config = json.load(f)
     
     print("Configuration:\n")

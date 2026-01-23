@@ -1,4 +1,5 @@
 #%%
+import sys
 import os
 import torch
 import rasterio
@@ -12,7 +13,7 @@ from torch_geometric.data import Data
 import pickle
 import lmdb
 from torch_scatter import scatter
-import Path
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 from dataset_utilities import (

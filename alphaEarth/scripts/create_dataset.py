@@ -39,7 +39,8 @@ elif torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 print(f'using Device: {device}')
-sys.path.append("../../src/dataset_utilities.py")
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src/")))
 
 
 from utilities_alphaEarth import (
@@ -57,7 +58,7 @@ def main(config_id): #regular method
     """
     
     # Open and load the JSON
-    with open("../dataset_configs/regular/"+config_id+".json", "r") as f:
+    with open("../configurations/regular/dataset_configs/"+config_id+".json", "r") as f:
         config = json.load(f)
     
     print("Configuration:\n")

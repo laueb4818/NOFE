@@ -1,6 +1,7 @@
 {
-    "dataset_id": "example_new",
-    "model_id": "model1",
+    "mode": "regular",
+    "dataset_id": "test123",
+    "model_id": "base",
     "epochs": 20,
     "batch_size": 1,
     "learning_rate": 0.00001,

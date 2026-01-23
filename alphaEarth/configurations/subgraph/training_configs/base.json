@@ -1,6 +1,6 @@
 {
-    "dataset_id": "dataset1",
-    "model_id": "model1_subgraph",
+    "dataset_id": "high_res",
+    "model_id": "subgraph_basic",
     "epochs": 20,
     "batch_size": 1,
     "learning_rate": 0.00001,
@@ -8,3 +8,4 @@
     "scheduler_gamma": 0.8,
     "random_seed": 42
 }
+
