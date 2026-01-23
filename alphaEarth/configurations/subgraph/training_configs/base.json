@@ -1,6 +1,7 @@
 {
-    "dataset_id": "high_res",
-    "model_id": "subgraph_basic",
+    "mode": "subgraph",
+    "dataset_id": "test123",
+    "model_id": "base",
     "epochs": 20,
     "batch_size": 1,
     "learning_rate": 0.00001,

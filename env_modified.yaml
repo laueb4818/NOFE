@@ -325,6 +325,7 @@ dependencies:
   - tomli-w
   - toolz
   - torch-geometric
+  - torch-scatter
   - tornado
   - tqdm
   - traitlets

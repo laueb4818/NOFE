@@ -112,14 +112,15 @@ def main():
         print(f"Available directories: {[d.name for d in base_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]}")
         sys.exit(1)
     
-    training_config_path = data_dir / "training_configs"
-    model_config_path = data_dir / "model_configs"
-    dataset_configs_path = data_dir / "dataset_configs/subgraph"
+    training_config_path = data_dir / "configurations" / "subgraph" / "training_configs"
+    model_config_path = data_dir / "configurations" / "subgraph" / "model_configs"
+    dataset_configs_path = data_dir / "configurations" / "subgraph" / "dataset_configs"
     dataset_path = data_dir / "datasets/subgraph"
     
     # Output paths - project-specific directories
-    trained_models_path = data_dir / "trained_models"
-    training_logs_path = data_dir / "training_logs"
+    trained_models_path = data_dir / "trained_models/subgraph"
+    training_logs_path = data_dir / "trained_models/subgraph/logs"
+
     
     # Create output directories
     trained_models_path.mkdir(parents=True, exist_ok=True)
@@ -384,7 +385,6 @@ def main():
                 'ep_val_loss': val_loss,
             })
         
-        print(" " * 120, end="\r")
         #print(f'Epoch: {ep}/{epochs} - Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
         print(f'Epoch: {ep}/{epochs} - Loss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
         

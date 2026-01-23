@@ -96,14 +96,14 @@ def main():
         print(f"Available directories: {[d.name for d in base_dir.iterdir() if d.is_dir() and not d.name.startswith('.')]}")
         sys.exit(1)
     
-    training_config_path = data_dir / "training_configs"
-    model_config_path = data_dir / "model_configs"
-    dataset_configs_path = data_dir / "dataset_configs/regular"
+    training_config_path = data_dir / "configurations" / "regular" / "training_configs"
+    model_config_path = data_dir / "configurations" / "regular" / "model_configs"
+    dataset_configs_path = data_dir / "configurations" / "regular" / "dataset_configs"
     dataset_path = data_dir / "datasets/regular"
     
     # Output paths - project-specific directories
-    trained_models_path = data_dir / "trained_models"
-    training_logs_path = data_dir / "training_logs"
+    trained_models_path = data_dir / "trained_models/regular"
+    training_logs_path = data_dir / "trained_models/regular/logs"
     
     # Create output directories
     trained_models_path.mkdir(parents=True, exist_ok=True)
@@ -144,7 +144,6 @@ def main():
     scheduler_step = train_dict['scheduler_step']
     scheduler_gamma = train_dict['scheduler_gamma']
     epochs = train_dict['epochs']
-    batch_size = train_dict['batch_size']
     
     print(f"Data source: {data_source}")
     print(f"Configuration: {training_config_id}")

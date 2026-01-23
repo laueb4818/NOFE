@@ -3,3 +3,4 @@
 **/data/
 **/trained_models/
 **/training_logs/
+**/wandb/
