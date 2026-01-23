@@ -8,7 +8,7 @@
     "sampling_method": "random",
     "train_years": [2017, 2018, 2019, 2020],
     "test_years": [2021],
-    "train_samples_per_year": 2,
-    "test_samples_per_year": 2,
+    "train_samples_per_year": 1000,
+    "test_samples_per_year": 100,
     "feature_mode": "channel_and_position"
 }
