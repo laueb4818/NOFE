@@ -15,176 +15,21 @@ class Graph_Generator:
     This class is a parent class for the actual generator calsses.
     Actual classes will need to extend this e.g. by loading
     """
-    def __init__(self, datafolder:str=None):
+    def __init__(self, datafolder:str):
         self.directory=datafolder
         
+    def load_data(self):
+        # should be implemented by subclass
+        pass
+    
+    def generate_normed_sample(self, N:int, method:str):
+        # should be implemented by subclass
+        pass
         
         #self.config = sample_config.copy()
         # Dynamically create attributes for easy access
         #for key, value in sample_config.items():
         #    setattr(self, key, value)
-
-    def load_data(self, normed_data_array: np.ndarray, latitudes: np.ndarray, longitudes: np.ndarray):
-        """
-        This is just a mock method. needs to be replaced in practce with extended data loading and normalizeing method
-        
-        :param self: Description
-        :param data_array: Description
-        :type data_array: np.ndarray
-        :param latitudes: Description
-        :type latitudes: np.ndarray
-        :param longitudes: Description
-        :type longitudes: np.ndarray
-        """
-        self.da = normed_data_array
-        self.grid_latitudes = latitudes
-        self.grid_longitudes = longitudes
-        print(f'self.da.shape: {self.da.shape}')
-        print(f'grid_latitudes.shape: {self.grid_latitudes.shape}')
-        print(f'grid_longitudes.shape: {self.grid_longitudes.shape}')
-        
-
-
-    def generate_normed_sample(self, N:int=None, method:str=None):
-        """
-        This method generates a sample from initially loaded data self.da
-        
-        :param self: Description
-        :param N: number of points to sample
-        :type N: int
-        :param method: 
-        'random': randomly samples N points
-        'interpolate': not defined yet
-        'regular_subset': based on number of points N, the method selects a subset of the data that matches a regular grid structure
-        :type method: str
-        """
-        
-        n_channels, n_lat, n_lon = self.da.shape
-        '''
-        if N==None:
-            N=self.N
-        if method==None:
-            method=self.generator_method
-        '''
-        
-        if N >= n_lat*n_lon:
-            print(f"requested number of points larger then dataset\n-> return full dataset of {n_lat*n_lon} points.")
-            N = n_lat*n_lon
-        
-        if method=="random":
-            # Flatten indices, sample without replacement
-            flat_indices = np.random.choice(n_lat * n_lon, size=N, replace=False)
-            # Convert back to 2D coordinates
-            indices = np.column_stack(np.unravel_index(flat_indices, (n_lat, n_lon)))
-            # sort by first and then second column
-            indices = indices[np.lexsort((indices[:, 1], indices[:, 0]))]
-
-        elif method=="interpolate":
-            pass
-        
-        elif method=="regular_subset":
-            aspect = n_lat / n_lon
-            n_lat_new = int(round(np.sqrt(N * aspect)))
-            n_lon_new = int(round(N / n_lat_new))  
-            
-            lat_inds = np.arange(n_lat)
-            lat_inds_subset = lat_inds[np.linspace(0, len(lat_inds) - 1, n_lat_new, dtype=int)]
-            
-            lon_inds = np.arange(n_lon)
-            lon_inds_subset = lon_inds[np.linspace(0, len(lon_inds) - 1, n_lon_new, dtype=int)]
-            
-            indices1 = np.repeat(lat_inds_subset, n_lon_new) # repeats each component 'n_lon_new' times
-            indices2 = np.tile(lon_inds_subset, n_lat_new) # repeats full array 'n_lat_new' times 
-            
-            indices = np.vstack([indices1,indices2]).T
-        
-        else:
-            print(f'"{method}" is an invalid sample method!')
-        
-        #self.normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
-        # more efficient. previously: normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
-        normed_values = torch.as_tensor(self.da[:, indices[:,0], indices[:,1]].T.copy())
-        latitudes = self.grid_latitudes[indices[:,0]]
-        longitudes = self.grid_longitudes[indices[:,1]]
-        #self.gps = np.column_stack((latitudes, longitudes))
-        gps = np.column_stack((latitudes, longitudes))
-        
-        return normed_values, gps
-
-
-
-    def cartesian_projection(self, lat:np.ndarray=None, lon:np.ndarray=None):
-        """
-        Convert GPS coordinates (lat/lon) to ECEF coordinates (x, y, z)
-        Vectorized over all points.
-        """
-        
-        '''
-        mode = "class_external"
-        if lat == None:
-            lat = self.gps[:, 0]
-            mode = "class_internal"
-        elif type(lat)==float:
-            lat = np.array(lat)
-        if lon == None:
-            lon = self.gps[:, 1]
-        elif type(lon)==float:
-            lon = np.array(lon)
-        '''
-        
-        altitude = 5500
-        # Convert to arrays if floats
-        lat = np.atleast_1d(lat)
-        lon = np.atleast_1d(lon)
-        
-        # Create transformer once
-        trans = Transformer.from_crs(4979, 4978, always_xy=True)
-        
-        # Vectorized transform
-        x, y, z = trans.transform(lon, lat, np.full_like(lat, altitude))
-        
-        # Stack into (N, 3)
-        xyz = np.stack([x, y, z], axis=-1)
-        
-        # normalize
-        #xyz = xyz / np.linalg.norm(xyz, axis=1, keepdims=True)
-        
-        cartesian=xyz
-        return cartesian
-
-
-    def norm_coords(self, cartesian):
-        """
-        We norm the 3-dim. cartesian coordinates such that the values are [-1, 1].
-        The scale of the 3 dimensions w.r.t each other remains the same.
-        This is accomplished by subtracting their individual center values, but dividing by a common denominator
-        
-        requires subregion to be loaded 'self.load_subregion()'
-        
-        returns np.ndarray of shape (N,3)
-        """
-        bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
-        bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
-        bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
-        bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
-        
-        bounds = np.vstack(([bound_1, bound_2, bound_3, bound_4]))
-        
-        x_min, y_min, z_min = np.min(bounds, axis=0)
-        x_max, y_max, z_max = np.max(bounds,axis=0)
-        
-        x_center = (x_max + x_min) / 2
-        y_center = (y_max + y_min) / 2
-        z_center = (z_max + z_min) / 2
-        
-        denominator = np.sqrt(3) * np.sqrt( (x_max-x_min)**2 + (y_max-y_min)**2 + (z_max-z_min)**2 )
-                
-        normed_coords = cartesian
-        normed_coords[:,0] = (normed_coords[:,0] - x_center) / denominator
-        normed_coords[:,1] = (normed_coords[:,1] - y_center) / denominator
-        normed_coords[:,2] = (normed_coords[:,2] - z_center) / denominator
-        
-        return normed_coords
 
 
     def get_edges(self, source:np.ndarray=None, target:np.ndarray=None, k:int=None, mode:str="self_search"):
@@ -331,55 +176,6 @@ class Graph_Generator:
         return v_target
 
 
-    def old_get_sigmas(self, distance_table:np.ndarray=None, perplexity:int=None):
-        """
-        Compute bandwidth (sigma) for Gaussian kernel based on perplexity.
-        Similar to t-SNE perplexity tuning.
-        
-        Args:
-            distances: np.array of shape (n_points, k) - distances to k neighbors
-            perplexity: target perplexity value
-        
-        Returns:
-            sigmas: np.array of shape (n_points,)
-        """
-        
-        target_entropy = np.log(perplexity)
-        
-        def compute_entropy(sigma, dists):
-            """Compute entropy given sigma."""
-            # Gaussian kernel
-            p = np.exp(-dists**2 / (2 * sigma**2))
-            p = p / (np.sum(p) + 1e-10)
-            entropy = -np.sum(p * np.log(p + 1e-10))
-            return entropy
-        
-        sigmas = []
-        for i in range(distance_table.shape[0]):
-            dists = distance_table[i]
-            
-            # Binary search for sigma
-            sigma_min, sigma_max = 0.01, 1000.0
-            sigma = 1.0
-            
-            for _ in range(50):  # max iterations
-                entropy = compute_entropy(sigma, dists)
-                
-                if abs(entropy - target_entropy) < 1e-5:
-                    break
-                
-                if entropy > target_entropy:
-                    sigma_max = sigma
-                    sigma = (sigma + sigma_min) / 2
-                else:
-                    sigma_min = sigma
-                    sigma = (sigma + sigma_max) / 2
-            
-            sigmas.append(sigma)
-        
-        return np.array(sigmas)
-
-
     def get_sigmas(self, distance_table: np.ndarray, perplexity: float):
         target_entropy = np.log(perplexity)
         sigmas = []
@@ -462,9 +258,10 @@ class Graph_Generator:
 
 
     def sample_graph(self, N:int=None, k:int=None, perplexity:int=None, sampling_method:str="random", gen_feature_mode:str="channel_only"):
-        normed_values, gps = self.generate_normed_sample(N=N, method=sampling_method) # sample subset 
-        cartesian = self.cartesian_projection(lat=gps[:, 0], lon=gps[:, 1]) # get 3 dim. cartesian coordinates for sample locations
-        normed_coords = self.norm_coords(cartesian=cartesian) # norm coordinates based on subregion
+        #normed_values, gps = self.generate_normed_sample(N=N, method=sampling_method) # sample subset 
+        #cartesian = self.cartesian_projection(lat=gps[:, 0], lon=gps[:, 1]) # get 3 dim. cartesian coordinates for sample locations
+        #normed_coords = self.norm_coords(cartesian=cartesian) # norm coordinates based on subregion
+        normed_values, normed_coords, meta = self.generate_normed_sample(N=N, method=sampling_method)
         distance_table, neighbor_table, edge_indices, edge_dist = self.get_edges(source=normed_coords, target=normed_coords, k=k, mode="self_search")
         edge_attributes = self.get_edge_attributes(source_coords=normed_coords, 
                             target_coords=normed_coords, 
@@ -476,7 +273,7 @@ class Graph_Generator:
         node_features = self.get_node_features(normed_coords=normed_coords, normed_values=normed_values, mode=gen_feature_mode)
         sigmas = self.get_sigmas(distance_table=distance_table, perplexity=perplexity)
         input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
-        return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, edge_dist=edge_dist ,input_affinities=input_affinities, sigmas=sigmas, gps=gps, normed_coords=normed_coords, normed_values=normed_values, year=self.year)
+        return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, edge_dist=edge_dist, input_affinities=input_affinities, sigmas=sigmas, normed_coords=normed_coords, normed_values=normed_values, meta=meta)
 
 
 
@@ -501,26 +298,14 @@ class Graph_Generator:
                             include_feat_diff=False,
                             )
         
-        cross_graph = Data(vert_in_features=in_graph.x,             # node features of input graph (= node position and/or channel values)
-                           edges_in=in_graph.edge_attr,             # edge attributes of input graph
-                           edge_idx_in=in_graph.edge_index,         # edge indices for input graph
-                           vert_in=in_graph.normed_coords,          # node positions of input graph
-                           vert_in_gps=in_graph.gps,                # input graphs gps coordinates
-                           vert_in_values=in_graph.normed_values,   # pure channel values of input graph 
-                           edge_dist_in=in_graph.edge_dist,         # node distance per edge for input graph
-                           #vert_out_features_truth=out_graph.x,    # ground truth for corresponding input node feature BUT not used because for loss, we only want channel values
-                           edges_out=out_graph.edge_attr,           # edge attributes of output graph
-                           edge_idx_out=out_graph.edge_index,       # edge indices for output graph
-                           vert_out=out_graph.normed_coords,        # node positions of output graph
-                           vert_out_gps=out_graph.gps,              # output graphs gps coordinates
-                           vert_out_values=out_graph.normed_values, # pure channel values of output graph (THIS IS USED FOR THE GROUND TRUTH)
-                           edge_dist_out=out_graph.edge_dist,       # node distance per edge for output graph
-                           cross_edges=cross_edge_attributes,       # edge attributes for cross connections between input and output
-                           cross_edge_idx=cross_edge_indices,       # edge indices for cross connections between input and output
-                           cross_edge_dist=cross_edge_dist,         # node distance per edge for cross connections
-                           sigmas=out_graph.sigmas,                 # sigma values per point for output nodes
-                           input_affinities=out_graph.input_affinities, # Ground truth data --> into loss function
-                           year=out_graph.year)                     # year of origin data
+        cross_graph = Data(source = in_graph,
+                           target = out_graph,
+                           cross = Data(
+                               edges=cross_edge_attributes,
+                               edge_idx=cross_edge_indices
+                               )
+                           )
+        
         
         return cross_graph
     
@@ -532,12 +317,12 @@ class Graph_Generator:
         interpolate: if true: interpolates channel values for target graph based on neighboring values from source graph
         gen_feature_mode: determines whether features contain channel values, position or both
         """
-        normed_values_source=cross_graph.vert_in_values
+        normed_values_source=cross_graph.source.x
         # more efficient. previously: normed_coords_source=torch.tensor(cross_graph.vert_in)
-        normed_coords_source=torch.as_tensor(cross_graph.vert_in)
+        normed_coords_source=torch.as_tensor(cross_graph.source.normed_coords)
         # more efficient. previously: normed_coords_target=torch.tensor(cross_graph.vert_out)
-        normed_coords_target=torch.as_tensor(cross_graph.vert_out)
-        cross_edge_idx=cross_graph.cross_edge_idx
+        normed_coords_target=torch.as_tensor(cross_graph.target.normed_coords)
+        cross_edge_idx=cross_graph.cross.edge_idx
         
         if interpolate and (gen_feature_mode != "position_only"):
             interpolated_values = self.inverse_distance_interpolation(
@@ -565,7 +350,7 @@ class Graph_Generator:
             print(f'{s+1}/{n_samples}')
             in_graph = self.sample_graph(N=N_in, k=k_in, perplexity=perplexity, sampling_method=input_sampling_method)
             cross_graph = self.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=k_cross)
-            cross_graph["vert_out_features_constructed"] = self.construct_output_node_features(cross_graph=cross_graph, interpolate=interpolate_graph_features, gen_feature_mode=gen_feature_mode)
+            cross_graph.cross["x"] = self.construct_output_node_features(cross_graph=cross_graph, interpolate=interpolate_graph_features, gen_feature_mode=gen_feature_mode)
             graph_list.append(cross_graph)
         return graph_list
 

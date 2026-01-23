@@ -207,11 +207,11 @@ class KernelNN_subgraph(nn.Module):
 
     def forward(self, data):
         # subgraph of known inputs
-        features_a, edge_idx_a, edges_a = data.vert_in_features, data.edge_idx_in, data.edges_in
+        features_a, edge_idx_a, edges_a = data.source.x, data.source.edge_idx, data.source.edges# OLD: data.vert_in_features, data.edge_idx_in, data.edges_in
         # subgraph of prediction nodes
-        features_b, edge_idx_b, edges_b = data.vert_out_features_constructed, data.edge_idx_out, data.edges_out
+        features_b, edge_idx_b, edges_b = data.target.x, data.target.edge_idx, data.target.edges # OLD: data.vert_out_features_constructed, data.edge_idx_out, data.edges_out
         # cross graph components
-        cross_edges, cross_edge_idx = data.cross_edges, data.cross_edge_idx
+        cross_edges, cross_edge_idx = data.cross.edges, data.cross.edge_idx# OLD: data.cross_edges, data.cross_edge_idx
 
         # lifting 
         features_a = self.L1(features_a)
