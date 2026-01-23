@@ -15,5 +15,4 @@
     "test_samples_per_date": 100,
     "feature_mode": "channel_and_position",
     "vars": ["w", "v", "z", "q", "r", "t", "d", "o3", "pv", "u", "vo"]
-
 }
