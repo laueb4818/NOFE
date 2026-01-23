@@ -11,8 +11,9 @@ import faiss
 from torch_geometric.data import Data
 from torch_scatter import scatter
 
-sys.path.append("/Volumes/T7-storage/NOFE/src/")
-os.chdir("/Volumes/T7-storage/NOFE/ERA5/scripts/")
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../src/")))
+#os.chdir(os.path.dirname(__file__))
 
 from dataset_utilities import (
     GraphLMDBWriter,
@@ -31,7 +32,7 @@ class ERA5_Graph_Generator(Graph_Generator):
         file_path = os.path.join(self.directory, filename)
         self.meta = Data(source_file=file_path)
         date = filename[:10]
-        print(date)
+        #print(date)
         self.meta['date'] = date
         
         min_lon, min_lat, max_lon, max_lat = bbox
@@ -104,6 +105,81 @@ class ERA5_Graph_Generator(Graph_Generator):
         self.grid_longitudes = np.linspace(bbox[0], bbox[2], self.da.shape[2])
     '''
     
+    
+    def cartesian_projection(self, lat:np.ndarray=None, lon:np.ndarray=None):
+        """
+        Convert GPS coordinates (lat/lon) to ECEF coordinates (x, y, z)
+        Vectorized over all points.
+        """
+        
+        '''
+        mode = "class_external"
+        if lat == None:
+            lat = self.gps[:, 0]
+            mode = "class_internal"
+        elif type(lat)==float:
+            lat = np.array(lat)
+        if lon == None:
+            lon = self.gps[:, 1]
+        elif type(lon)==float:
+            lon = np.array(lon)
+        '''
+        
+        altitude = 5500
+        # Convert to arrays if floats
+        lat = np.atleast_1d(lat)
+        lon = np.atleast_1d(lon)
+        
+        # Create transformer once
+        trans = Transformer.from_crs(4979, 4978, always_xy=True)
+        
+        # Vectorized transform
+        x, y, z = trans.transform(lon, lat, np.full_like(lat, altitude))
+        
+        # Stack into (N, 3)
+        xyz = np.stack([x, y, z], axis=-1)
+        
+        # normalize
+        #xyz = xyz / np.linalg.norm(xyz, axis=1, keepdims=True)
+        
+        cartesian=xyz
+        return cartesian
+    
+    
+    def norm_coords(self, cartesian):
+        """
+        We norm the 3-dim. cartesian coordinates such that the values are [-1, 1].
+        The scale of the 3 dimensions w.r.t each other remains the same.
+        This is accomplished by subtracting their individual center values, but dividing by a common denominator
+        
+        requires subregion to be loaded 'self.load_subregion()'
+        
+        returns np.ndarray of shape (N,3)
+        """
+        bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
+        bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
+        
+        bounds = np.vstack(([bound_1, bound_2, bound_3, bound_4]))
+        
+        x_min, y_min, z_min = np.min(bounds, axis=0)
+        x_max, y_max, z_max = np.max(bounds,axis=0)
+        
+        x_center = (x_max + x_min) / 2
+        y_center = (y_max + y_min) / 2
+        z_center = (z_max + z_min) / 2
+        
+        denominator = np.sqrt(3) * np.sqrt( (x_max-x_min)**2 + (y_max-y_min)**2 + (z_max-z_min)**2 )
+                
+        normed_coords = cartesian
+        normed_coords[:,0] = (normed_coords[:,0] - x_center) / denominator
+        normed_coords[:,1] = (normed_coords[:,1] - y_center) / denominator
+        normed_coords[:,2] = (normed_coords[:,2] - z_center) / denominator
+        
+        return normed_coords
+    
+    
     def generate_normed_sample(self, N:int=None, method:str=None):
         """
         This method generates a sample from initially loaded data self.da
@@ -168,71 +244,9 @@ class ERA5_Graph_Generator(Graph_Generator):
         #self.gps = np.column_stack((latitudes, longitudes))
         gps = np.column_stack((latitudes, longitudes))
         
-        return normed_values, gps
-    
-    
-    def cartesian_projection(self, lat:np.ndarray=None, lon:np.ndarray=None):
-        """
-        Convert GPS coordinates (lat/lon) to ECEF coordinates (x, y, z)
-        Vectorized over all points.
-        """
+        raw_coords = self.cartesian_projection(lat=latitudes, lon=longitudes)
+        meta = Data(gps=gps)
         
-        '''
-        mode = "class_external"
-        if lat == None:
-            lat = self.gps[:, 0]
-            mode = "class_internal"
-        elif type(lat)==float:
-            lat = np.array(lat)
-        if lon == None:
-            lon = self.gps[:, 1]
-        elif type(lon)==float:
-            lon = np.array(lon)
-        '''
+        normed_coords = self.norm_coords(raw_coords)
         
-        altitude = 5500
-        # Convert to arrays if floats
-        lat = np.atleast_1d(lat)
-        lon = np.atleast_1d(lon)
-        
-        # Create transformer once
-        trans = Transformer.from_crs(4979, 4978, always_xy=True)
-        
-        # Vectorized transform
-        x, y, z = trans.transform(lon, lat, np.full_like(lat, altitude))
-        
-        # Stack into (N, 3)
-        xyz = np.stack([x, y, z], axis=-1)
-        
-        # normalize
-        #xyz = xyz / np.linalg.norm(xyz, axis=1, keepdims=True)
-        
-        cartesian=xyz
-        return cartesian
-
-# %%
-with open('../dataset_configs/regular/example.json', 'r') as f:
-    config = json.load(f)
-bbox=[config['lon_min'], config['lat_min'], config['lon_max'], config['lat_max']]
-
-#%%
-G = ERA5_Graph_Generator(config['data_folder_path'])
-G.load_data(bbox=bbox, vars=config['vars'], filename='2018-01-01.nc')
-
-# %%
-graph = G.sample_graph(N=100, k = 10, perplexity=10)
-# %%
-
-ds = xr.open_dataset(config['data_folder_path']+'/2018-01-01.nc')
-# %%
-print(ds.dims)
-
-print(ds.shape)
-
-# %%
-da = ds[config['vars']]          # select only the variables in your list
-da = da.to_array(dim='variable') 
-da = da.squeeze(dim=['valid_time', 'pressure_level'])
-data_array = da.values
-data_array.shape
-# %%
+        return normed_values, normed_coords, meta
