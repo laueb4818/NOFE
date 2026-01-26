@@ -115,7 +115,7 @@ def main(config_id): #regular method
             in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph["vert_out_features_constructed"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
-            writer.append(cross_graph)
+            writer.append(cross_graph.cpu())
         print()
     
     # Test Set
@@ -134,7 +134,7 @@ def main(config_id): #regular method
             in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph["vert_out_features_constructed"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
-            writer.append(cross_graph)
+            writer.append(cross_graph.cpu())
         print()
     
 
