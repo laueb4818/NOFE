@@ -2,9 +2,10 @@ import ee
 import geedim  # enables .gd interface
 import os
 
-if not os.path.exists('data/'):
-    os.makedirs('data/')
-os.chdir('data/')
+path = '../data/'
+if not os.path.exists(path):
+    os.makedirs('../data/')
+os.chdir('..data/')
 
 # Authenticate & initialize
 ee.Initialize()  # or ee.Authenticate(); ee.Initialize(...)
