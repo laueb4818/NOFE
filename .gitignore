@@ -1,6 +1,7 @@
 **/datasets_subgraph/
 **/datasets/
 **/data/
+**/data
 **/trained_models/
 **/training_logs/
 **/wandb/
