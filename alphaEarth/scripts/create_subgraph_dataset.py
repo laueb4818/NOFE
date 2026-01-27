@@ -67,7 +67,7 @@ print(f'using Device: {device}')
 sys.path.append("../../src/dataset_utilities.py")
 
 
-from utilities_alphaEarth import (
+from utilities_alphaEarth_latest import (
     AlphaEarth_Graph_Generator,
     GraphLMDBWriter
 )
@@ -103,18 +103,22 @@ def main(config_id): #regular method
     print('\nGenerate Training Set\n')
     
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
+    data_path = config["data_folder_path"]
+    Generator = AlphaEarth_Graph_Generator(data_path) 
+    
     
     for year in config["train_years"]:
-        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
-        Generator = AlphaEarth_Graph_Generator(file_path) 
-        Generator.load_subregion(bbox=config["bbox"])
+        
+        Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
+        
         
         out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
         for n in range(config["train_samples_per_year"]):
+            out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["train_samples_per_year"]}', end='\r')
-            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
-            cross_graph["vert_out_features_constructed"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
+            cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())
         print()
     
@@ -124,16 +128,16 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for year in config["test_years"]:
-        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
-        Generator = AlphaEarth_Graph_Generator(file_path) 
-        Generator.load_subregion(bbox=config["bbox"])
+        Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
         
         out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+        
         for n in range(config["test_samples_per_year"]):
+            out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["test_samples_per_year"]}', end='\r')
-            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
-            cross_graph["vert_out_features_constructed"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
+            cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())
         print()
     

@@ -1,6 +1,6 @@
 {
     "mode": "subgraph",
-    "dataset_id": "test123",
+    "dataset_id": "subgraph_dataset_base1",
     "model_id": "base",
     "epochs": 20,
     "batch_size": 1,
