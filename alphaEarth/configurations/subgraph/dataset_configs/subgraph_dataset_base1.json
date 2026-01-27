@@ -10,7 +10,7 @@
     "perplexity": 20,
     "input_sampling_method": "random",
     "output_sampling_method": "regular_subset",
-    "train_years": [2017, 2018, 2019, 2020, 2021, 2022],
+    "train_years": [2017, 2018, 2019, 2020, 2021],
     "test_years": [2023],
     "train_samples_per_year": 100,
     "test_samples_per_year": 100,

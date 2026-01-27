@@ -1,0 +1,19 @@
+{
+    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data/",
+    "dataset_save_path": "../datasets/subgraph/",
+    "bbox":[10.79, 59.66, 10.86, 59.73],
+    "N_in": 3000,
+    "N_out": 5000,
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 5,
+    "perplexity": 20,
+    "input_sampling_method": "random",
+    "output_sampling_method": "regular_subset",
+    "train_years": [2017],
+    "test_years": [2023],
+    "train_samples_per_year": 50,
+    "test_samples_per_year": 10,
+    "feature_mode": "channel_and_position",
+    "interpolate_graph_features": true
+}

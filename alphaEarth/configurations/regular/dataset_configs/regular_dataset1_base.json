@@ -6,7 +6,7 @@
     "k": 10,
     "perplexity": 10,
     "sampling_method": "random",
-    "train_years": [2017, 2018, 2019, 2020, 2021, 2022],
+    "train_years": [2017, 2018, 2019, 2020, 2021],
     "test_years": [2023],
     "train_samples_per_year": 1000,
     "test_samples_per_year": 100,

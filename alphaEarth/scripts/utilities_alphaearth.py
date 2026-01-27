@@ -21,6 +21,15 @@ from dataset_utilities import (
     GraphLMDBReader,
 )
 
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+elif torch.backends.mps.is_available():
+    device = torch.device("mps")
+else:
+    device = torch.device("cpu")
+print(f'using Device: {device}')
+
 # %% define graph_generator
 class AlphaEarth_Graph_Generator:
     """
@@ -44,6 +53,7 @@ class AlphaEarth_Graph_Generator:
         bbox = (min_lon, min_lat, max_lon, max_lat)
         self.da will have structure: (channels, latitude, longitude)
         """
+        print(f'\nloading data from {self.file_path} ...')
         
         with rasterio.open(self.file_path) as src:
             if bbox is None:
@@ -77,9 +87,14 @@ class AlphaEarth_Graph_Generator:
         arr[np.isnan(arr)] = 0
         
         # normalize
+        eps = 1e-8
         mean = arr.mean(axis=(1,2), keepdims=True)
-        std = arr.std(axis=(1,2), keepdims=True)
-        self.da = (arr - mean) / std
+        std = arr.std(axis=(1,2), keepdims=True) + eps
+        print("arr finite:", np.isfinite(arr).all())
+        print("arr nan count:", np.isnan(arr).sum())
+        print("arr inf count:", np.isinf(arr).sum())
+        print("arr min/max:", np.nanmin(arr), np.nanmax(arr))
+        self.da = (arr - mean) / std 
         self.grid_latitudes = np.linspace(bbox[1], bbox[3], self.da.shape[1])
         self.grid_longitudes = np.linspace(bbox[0], bbox[2], self.da.shape[2])
         print(f'total number of points in dataset: {self.da.shape[1]*self.da.shape[2]}')
@@ -230,13 +245,14 @@ class AlphaEarth_Graph_Generator:
         return normed_coords
 
 
-    def get_edges(self, source:np.ndarray=None, target:np.ndarray=None, k:int=None, mode:str="self_search"):
+
+    def get_edges(self, source:np.ndarray=None, target:np.ndarray=None, k:int=None, perplexity:int=0, mode:str="self_search"):
         """
         Searches for k nearest neighbors of 'target' in 'source'.
         
-        :param source: dataset to find neighbors in
+        :param source: dataset to find neighbors in (coordinates)
         :type source: np.ndarray
-        :param target: dataset with points that neighbors are searched for 
+        :param target: dataset with points that neighbors are searched for (coordinates)
         :type target: np.ndarray
         :param k: number of neighbors
         :type k: int
@@ -244,82 +260,166 @@ class AlphaEarth_Graph_Generator:
         :type cross_search: bool
         """
         
+        if mode=="self_search":
+            NN = max(k+1, perplexity+1)
+        else:
+            NN = max(k, perplexity+1)
+
+
+        
         N, D = source.shape
         index = faiss.IndexFlatL2(D)  # L2 distance index (Euclidean)
         index.add(source)
+        distance_tab, indices_tab = index.search(target, NN) 
+
+
+        # get long table of edge indices and edge distances
         if mode == "cross_search":
-            distances, indices = index.search(target, k) 
+            dist_tab_k, idx_tab_k = distance_tab[:, :k], indices_tab[:, :k]       
         elif mode == "self_search": 
-            distances, indices = index.search(target, k+1) 
-            distances = distances[:, 1:]
-            indices = indices[:, 1:]
+            dist_tab_k, idx_tab_k = distance_tab[:, 1:k+1], indices_tab[:, 1:k+1]       
         else:
             print("no valid mode was provided!")
         
-        
-        source_idx = indices.reshape(-1)
+        source_idx = idx_tab_k.reshape(-1)
         target_idx = np.repeat(np.arange(target.shape[0]),k)
-        # more efficient. previously: edge_indices = torch.tensor(np.vstack([source_idx, target_idx]))
         edge_indices = torch.from_numpy(np.vstack([source_idx, target_idx]))
         
-        
-        edge_dist = distances.reshape(-1, 1)
-        
-        distance_table, neighbor_table = distances, indices # renaming to match other method
-        
-        return distance_table, neighbor_table, edge_indices, edge_dist
+        edge_dist = dist_tab_k.reshape(-1, 1)
+       
+        # get neighborhood index table for sigma calulation
+        idx_tab_p = indices_tab[:, 1:perplexity+1]
 
 
-    def get_edge_attributes(self, source_coords:np.ndarray=None, 
-                            target_coords:np.ndarray=None, 
-                            edge_indices:torch.Tensor=None, 
-                            edge_dist:np.ndarray=None,
-                            distance_table:np.ndarray=None,
-                            k:int=None,
-                            include_feat_diff:bool=False):
+        return edge_indices, edge_dist, idx_tab_p
+    
+    
+    
+    def feature_distances(self, indices: torch.Tensor, values: torch.Tensor) -> torch.Tensor:
         """
-        Docstring for get_edge_attributes
-        
-        :param self: Description
-        :param source_coords: normed_coords of source graph
-        :type source_coords: np.ndarray
-        :param target_coords: normed_coords of target graph
-        :type target_coords: np.ndarray
-        :param edge_indices: Description
-        :type edge_indices: torch.Tensor
-        :param edge_dist: Description
-        :type edge_dist: np.ndarray
-        :param distance_table: Description
-        :type distance_table: np.ndarray
-        :param k: Description
-        :type k: int
-        :param include_feat_diff: Description
-        :type include_feat_diff: bool
+        Compute Euclidean distances for neighboring node pairs.
+
+        Args:
+        indices: LongTensor of shape (N, p) specifying neighbor indices for each node.
+        values: FloatTensor of shape (N, f) with coordinates for each node.
+
+        Returns:
+        distances: FloatTensor of shape (N, p) with Euclidean distances to neighbors.
         """
-        
-        # target node positions
-        node_pos = target_coords[edge_indices[1,:]]
-        
-        max_neighbor_dists = np.repeat(distance_table[:,k-1], k)
-        regularized_distances = edge_dist.squeeze()/max_neighbor_dists
-        regularized_distances = regularized_distances[:, np.newaxis] 
-        
-        # normed displacement vector
-        source_nodes = source_coords[edge_indices[0,:]]
-        target_nodes = target_coords[edge_indices[1,:]]
+        # Gather neighbor coordinates
+        # indices: (N, p), values: (N, f) -> neighbor_values: (N, p, f)
+        neighbor_values = values[indices] # advanced indexing in PyTorch
+
+        # Expand original values to (N, 1, f) to broadcast
+        node_values = values.unsqueeze(1) # (N, 1, f)
+
+        # Compute Euclidean distance along last axis (f)
+        distances = torch.norm(node_values - neighbor_values, dim=-1) # (N, p)
+
+        return distances
+
+
+    def optimize_sigma(self, distances: torch.Tensor, target_perplexity: float,
+        tol=1e-5, max_iter=50) -> torch.Tensor:
+        """
+        Optimize sigma for each point to match target perplexity.
+
+        Args:
+        distances: FloatTensor of shape (N, p) with squared distances to neighbors.
+        target_perplexity: desired perplexity value (scalar).
+        tol: tolerance for perplexity matching.
+        max_iter: max binary search iterations.
+
+        Returns:
+        sigmas: FloatTensor of shape (N,) with optimized sigma values.
+        """
+        N, p = distances.shape
+        # Convert distances to float32 for stability
+        distances = distances.float()
+
+        # Compute log2(target_perplexity)
+        log_perplexity = torch.log2(torch.tensor(target_perplexity, device=distances.device))
+
+        # Initialize sigma bounds
+        sigma_min = torch.zeros(N, device=distances.device)
+        sigma_max = torch.full((N,), 1e5, device=distances.device)
+        sigma = torch.full((N,), 1.0, device=distances.device)
+
+        for _ in range(max_iter):
+            # Compute conditional probabilities
+            # p_ij ~ exp(-d_ij^2 / 2σ^2)
+            # sigma: (N,) -> (N,1) for broadcasting
+            p_ij = torch.exp(-distances / (2 * sigma.unsqueeze(1)**2))
+            # Normalize
+            p_ij_sum = p_ij.sum(dim=1, keepdim=True)
+            p_ij = p_ij / p_ij_sum
+
+            # Compute entropy H(P_i)
+            H = -(p_ij * torch.log2(p_ij + 1e-12)).sum(dim=1) # shape (N,)
+
+            # Binary search update
+            mask = H > log_perplexity # need larger sigma
+            sigma_min = torch.where(mask, sigma, sigma_min)
+            sigma_max = torch.where(mask, sigma_max, sigma)
+            # Avoid sigma_max == 1e5 for the first iteration
+            sigma = (sigma_min + sigma_max) / 2
+
+            # Early stopping if all entropies within tolerance
+            if torch.all(torch.abs(H - log_perplexity) < tol):
+                break
+
+        return sigma
+
+    def get_edge_attributes(
+        self,
+        source_coords: torch.Tensor,    # (N, f)
+        target_coords: torch.Tensor,    # (N, f)
+        edge_indices: torch.Tensor,     # (2, E), dtype=torch.long
+        edge_dist: torch.Tensor,        # (E, 1)
+        k: int,
+        include_feat_diff: bool = False
+    ):
+        """
+        Returns:
+            edge_attributes: (E, 3f + 1)
+        """
+
+        # Node positions (target)
+        node_pos = target_coords[edge_indices[1]]  # (E, f)
+
+        # ---- Regularized distances ----
+        # max dist per source node (repeat k times)
+        # edge_indices[0] tells us which node each edge belongs to
+        max_dist_per_node = torch.zeros(
+            source_coords.shape[0], device=edge_dist.device
+        )
+
+        max_dist_per_node.scatter_reduce_(
+            0, edge_indices[0], edge_dist.squeeze(), reduce="amax"
+        )
+
+        regularized_distances = (
+            edge_dist.squeeze() /
+            max_dist_per_node[edge_indices[0]]
+        ).unsqueeze(1)
+
+        # ---- Displacement vectors ----
+        source_nodes = source_coords[edge_indices[0]]
+        target_nodes = target_coords[edge_indices[1]]
         absolute_displacement = source_nodes - target_nodes
-        epsilon = 1e-12
-        normed_displacement = absolute_displacement / (np.linalg.norm(absolute_displacement, axis=1, keepdims=True) + epsilon)
-        
-        # NOTE optionally include date encoding, etc.
+
+        norm = torch.norm(absolute_displacement, dim=1, keepdim=True)
+        normed_displacement = absolute_displacement / (norm + 1e-12)
+
         if include_feat_diff:
-            print('including feature difference not yet implemented. Continuing without')
-        
-        # bind it all together and make it a tensor
-        edge_attributes = np.hstack([node_pos, normed_displacement, regularized_distances])
-        # more efficient. previously: edge_attributes = torch.tensor(edge_attributes, dtype=torch.float32)
-        edge_attributes = torch.as_tensor(edge_attributes, dtype=torch.float32)
-        
+            print("including feature difference not yet implemented. Continuing without")
+
+        # ---- Stack features ----
+        edge_attributes = torch.cat(
+            [node_pos, normed_displacement, regularized_distances],
+            dim=1
+        )
+
         return edge_attributes
 
 
@@ -374,97 +474,6 @@ class AlphaEarth_Graph_Generator:
         return v_target
 
 
-    def old_get_sigmas(self, distance_table:np.ndarray=None, perplexity:int=None):
-        """
-        Compute bandwidth (sigma) for Gaussian kernel based on perplexity.
-        Similar to t-SNE perplexity tuning.
-        
-        Args:
-            distances: np.array of shape (n_points, k) - distances to k neighbors
-            perplexity: target perplexity value
-        
-        Returns:
-            sigmas: np.array of shape (n_points,)
-        """
-        
-        target_entropy = np.log(perplexity)
-        
-        def compute_entropy(sigma, dists):
-            """Compute entropy given sigma."""
-            # Gaussian kernel
-            p = np.exp(-dists**2 / (2 * sigma**2))
-            p = p / (np.sum(p) + 1e-10)
-            entropy = -np.sum(p * np.log(p + 1e-10))
-            return entropy
-        
-        sigmas = []
-        for i in range(distance_table.shape[0]):
-            dists = distance_table[i]
-            
-            # Binary search for sigma
-            sigma_min, sigma_max = 0.01, 1000.0
-            sigma = 1.0
-            
-            for _ in range(50):  # max iterations
-                entropy = compute_entropy(sigma, dists)
-                
-                if abs(entropy - target_entropy) < 1e-5:
-                    break
-                
-                if entropy > target_entropy:
-                    sigma_max = sigma
-                    sigma = (sigma + sigma_min) / 2
-                else:
-                    sigma_min = sigma
-                    sigma = (sigma + sigma_max) / 2
-            
-            sigmas.append(sigma)
-        
-        return np.array(sigmas)
-
-
-    def get_sigmas(self, distance_table: np.ndarray, perplexity: float):
-        target_entropy = np.log(perplexity)
-        sigmas = []
-
-        for dists in distance_table:
-            dists = np.array(dists, dtype=np.float64)
-
-            # Use mean neighbor distance as scale
-            mean_dist = np.mean(dists)
-            sigma_min = 1e-3 * mean_dist  # small fraction
-            sigma_max = 10 * mean_dist    # large fraction
-            sigma = mean_dist             # initial guess
-
-            for _ in range(50):
-                # Gaussian kernel
-                p = np.exp(-dists**2 / (2 * sigma**2))
-                p /= np.sum(p)
-                entropy = -np.sum(p * np.log(p + 1e-10))
-
-                if abs(entropy - target_entropy) < 1e-5:
-                    break
-
-                # binary search
-                if entropy < target_entropy:
-                    # entropy too low -> sigma too small -> increase sigma
-                    sigma_min = sigma
-                    sigma = (sigma + sigma_max) / 2
-                else:
-                    # entropy too high -> sigma too large -> decrease sigma
-                    sigma_max = sigma
-                    sigma = (sigma + sigma_min) / 2
-
-            sigmas.append(sigma)
-        
-        # TODO: FIX this:
-        ones = np.ones_like(sigmas)
-
-        return np.array(ones)
-
-
-
-
     def get_affinities(self, normed_values:torch.Tensor=None, edge_indices:torch.Tensor=None, sigmas:np.ndarray=None):
         """
         Compute local affinity matrix using per-point sigma values.
@@ -508,17 +517,28 @@ class AlphaEarth_Graph_Generator:
         normed_values, gps = self.generate_normed_sample(N=N, method=sampling_method) # sample subset 
         cartesian = self.cartesian_projection(lat=gps[:, 0], lon=gps[:, 1]) # get 3 dim. cartesian coordinates for sample locations
         normed_coords = self.norm_coords(cartesian=cartesian) # norm coordinates based on subregion
-        distance_table, neighbor_table, edge_indices, edge_dist = self.get_edges(source=normed_coords, target=normed_coords, k=k, mode="self_search")
+        edge_indices, edge_dist, idx_tab_p = self.get_edges(source=normed_coords, target=normed_coords, k=k, perplexity=perplexity, mode="self_search")
+
+        # --- GPU transition ---
+        edge_indices = torch.as_tensor(edge_indices, device=device, dtype=torch.long) 
+        edge_dist = torch.as_tensor(edge_dist, device=device, dtype=torch.float32)
+        idx_tab_p = torch.as_tensor(idx_tab_p, device=device, dtype=torch.long)
+        normed_values = torch.as_tensor(normed_values, device=device, dtype=torch.float32)
+        normed_coords = torch.as_tensor(normed_coords, device=device, dtype=torch.float32)
+
         edge_attributes = self.get_edge_attributes(source_coords=normed_coords, 
                             target_coords=normed_coords, 
                             edge_indices=edge_indices, 
                             edge_dist=edge_dist,
-                            distance_table=distance_table,
                             k=k,
                             include_feat_diff=False)
         node_features = self.get_node_features(normed_coords=normed_coords, normed_values=normed_values, mode=gen_feature_mode)
-        sigmas = self.get_sigmas(distance_table=distance_table, perplexity=perplexity)
-        input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
+        if perplexity is not None and perplexity != 0:
+            feature_distances = self.feature_distances(indices=idx_tab_p, values=normed_values)
+            sigmas = self.optimize_sigma(distances=feature_distances, target_perplexity=perplexity)
+            input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
+        else:
+            input_affinities, sigmas = None, None
         return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, edge_dist=edge_dist ,input_affinities=input_affinities, sigmas=sigmas, gps=gps, normed_coords=normed_coords, normed_values=normed_values, year=self.year)
 
 
@@ -532,14 +552,16 @@ class AlphaEarth_Graph_Generator:
         returns list of Data objects
         !!! Careful when writing data as it is in form of a list !!!
         """
-        cross_distance_table, cross_neighbor_table, cross_edge_indices, cross_edge_dist = self.get_edges(source=in_graph.normed_coords, 
-                                                                                 target=out_graph.normed_coords, 
-                                                                                 k=k_cross, mode="cross_search")
+        cross_edge_indices, cross_edge_dist, _  = self.get_edges(source=in_graph.normed_coords.cpu().numpy(), 
+                                                                                 target=out_graph.normed_coords.cpu().numpy(), 
+                                                                                 k=k_cross, mode="cross_search", perplexity=0)
+        cross_edge_indices = torch.as_tensor(cross_edge_indices, device=device, dtype=torch.long)
+        cross_edge_dist = torch.as_tensor(cross_edge_dist, device=device, dtype=torch.float32)
+        
         cross_edge_attributes = self.get_edge_attributes(source_coords=in_graph.normed_coords, 
                             target_coords=out_graph.normed_coords, 
                             edge_indices=cross_edge_indices, 
                             edge_dist=cross_edge_dist,
-                            distance_table=cross_distance_table,
                             k=k_cross,
                             include_feat_diff=False,
                             )
@@ -606,7 +628,7 @@ class AlphaEarth_Graph_Generator:
         print('output graph done!')
         for s in range(n_samples):
             print(f'{s+1}/{n_samples}')
-            in_graph = self.sample_graph(N=N_in, k=k_in, perplexity=perplexity, sampling_method=input_sampling_method)
+            in_graph = self.sample_graph(N=N_in, k=k_in, perplexity=0, sampling_method=input_sampling_method)
             cross_graph = self.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=k_cross)
             cross_graph["vert_out_features_constructed"] = self.construct_output_node_features(cross_graph=cross_graph, interpolate=interpolate_graph_features, gen_feature_mode=gen_feature_mode)
             graph_list.append(cross_graph)
