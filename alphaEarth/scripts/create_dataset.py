@@ -82,15 +82,17 @@ def main(config_id): #regular method
     
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
     
+    data_path = config["data_folder_path"]  
+    Generator = AlphaEarth_Graph_Generator(data_path) 
+    
     for year in config["train_years"]:
-        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
-        Generator = AlphaEarth_Graph_Generator(file_path) 
-        Generator.load_subregion(bbox=config["bbox"])
+
+        Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
         
         for n in range(config["train_samples_per_year"]):
             print(f'{year}: {n+1}/{config["train_samples_per_year"]}', end='\r')
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
-            writer.append(graph)
+            writer.append(graph.cpu())
         print()
     
     # Test Set
@@ -99,14 +101,13 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for year in config["test_years"]:
-        file_path = os.path.join(config["data_folder_path"], "sat_emb_"+str(year)+".tif")
-        Generator = AlphaEarth_Graph_Generator(file_path) 
-        Generator.load_subregion(bbox=config["bbox"])
+        Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
+
         
         for n in range(config["test_samples_per_year"]):
             print(f'{year}: {n+1}/{config["test_samples_per_year"]}', end='\r')
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
-            writer.append(graph)
+            writer.append(graph.cpu())
         print()
 
 

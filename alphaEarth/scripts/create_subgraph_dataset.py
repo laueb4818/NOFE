@@ -67,7 +67,7 @@ print(f'using Device: {device}')
 sys.path.append("../../src/dataset_utilities.py")
 
 
-from alphaEarth.scripts.utilities_alphaEarth import (
+from utilities_alphaEarth import (
     AlphaEarth_Graph_Generator,
     GraphLMDBWriter
 )

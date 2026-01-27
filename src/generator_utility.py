@@ -405,7 +405,6 @@ class Graph_Generator:
             meta['feature_distances'] = feature_distances
             sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
             sigmas = sigmas.to(device=device)
-            print(f'sigmas:\nmean:{sigmas.mean()}\nstd:{sigmas.std()}')
             input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
         else:
             input_affinities, sigmas = None, None
