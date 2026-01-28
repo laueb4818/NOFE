@@ -18,6 +18,30 @@ else:
     device = torch.device("cpu")
 print(f'using Device: {device}')
 
+
+import time
+import functools
+from collections import defaultdict
+
+# shared registry
+_function_timings = defaultdict(lambda: {"total": 0.0, "calls": 0})
+
+
+def track_time(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+
+        stats = _function_timings[func.__name__]
+        stats["total"] += elapsed
+        stats["calls"] += 1
+
+        return result
+
+    return wrapper
+
 # %% define graph_generator
 class Graph_Generator:
     """
@@ -26,11 +50,13 @@ class Graph_Generator:
     """
     def __init__(self, datafolder:str):
         self.directory=datafolder
-        
+    
+    @track_time
     def load_data(self):
         # should be implemented by subclass
         pass
     
+    @track_time
     def generate_normed_sample(self, N:int, method:str):
         # should be implemented by subclass
         pass
@@ -41,6 +67,7 @@ class Graph_Generator:
         #    setattr(self, key, value)
 
 
+    @track_time
     def get_edges(self, source:np.ndarray=None, target:np.ndarray=None, k:int=None, perplexity:int=None, mode:str="self_search"):
         """
         Searches for k nearest neighbors of 'target' in 'source'.
@@ -94,6 +121,7 @@ class Graph_Generator:
         return edge_indices, edge_dist, idx_tab_p
 
 
+    @track_time
     def feature_distances(self, indices: torch.Tensor, values: torch.Tensor) -> torch.Tensor:
         """
         Compute Euclidean distances for neighboring node pairs.
@@ -119,6 +147,7 @@ class Graph_Generator:
 
 
 
+    @track_time
     def get_edge_attributes(
         self,
         source_coords: torch.Tensor,    # (N, f)
@@ -172,6 +201,7 @@ class Graph_Generator:
         return edge_attributes
 
 
+    @track_time
     def get_node_features(self, normed_coords:np.ndarray=None, normed_values:torch.Tensor=None, mode:str="channel_only"):
         if type(normed_coords) != torch.Tensor:
             normed_coords = torch.as_tensor(normed_coords, dtype=torch.float32)
@@ -188,11 +218,12 @@ class Graph_Generator:
         return node_features
 
 
+    @track_time
     def inverse_distance_interpolation(self,
         normed_values_source: torch.Tensor,   # (N, F)
         normed_coords_source: torch.Tensor,   # (N, D)
         normed_coords_target: torch.Tensor,   # (M, D)
-        cross_edge_idx: torch.Tensor,         # (2, E)
+        cross_edge_index: torch.Tensor,         # (2, E)
         eps: float = 1e-12
     ):
         """
@@ -202,8 +233,8 @@ class Graph_Generator:
             v_target: (M, F) interpolated features at target points
         """
         # 1. Extract source and target indices
-        source_idx = cross_edge_idx[0]
-        target_idx = cross_edge_idx[1]
+        source_idx = cross_edge_index[0]
+        target_idx = cross_edge_index[1]
         
         # 2. Compute distances for each edge
         diff = normed_coords_target[target_idx] - normed_coords_source[source_idx]  # (E, D)
@@ -223,6 +254,7 @@ class Graph_Generator:
         return v_target
 
 
+    @track_time
     def optimize_sigma(self, distances, perplexity, tol=1e-5, max_iter=50):
         """
         Compute sigma (bandwidth) for each point based on target perplexity using binary search.
@@ -337,6 +369,7 @@ class Graph_Generator:
 
 
 
+    @track_time
     def get_affinities(self, normed_values:torch.Tensor=None, edge_indices:torch.Tensor=None, sigmas:np.ndarray=None):
         """
         Compute local affinity matrix using per-point sigma values.
@@ -413,6 +446,7 @@ class Graph_Generator:
 
 
 
+    @track_time
     def connect_graphs(self, in_graph:Data=None, out_graph:Data=None, k_cross:int=None):
         """
         This method creates a cross graph structure.
@@ -442,7 +476,7 @@ class Graph_Generator:
                            target = out_graph,
                            cross = Data(
                                edges=cross_edge_attributes,
-                               edge_idx=cross_edge_indices
+                               edge_index=cross_edge_indices
                                )
                            )
         
@@ -450,6 +484,7 @@ class Graph_Generator:
         return cross_graph
     
     
+    @track_time
     def construct_output_node_features(self, cross_graph:Data, interpolate:bool=True, gen_feature_mode:str="channel_only"):
         """
         construct node features for the output graph
@@ -462,14 +497,14 @@ class Graph_Generator:
         normed_coords_source=torch.as_tensor(cross_graph.source.normed_coords)
         # more efficient. previously: normed_coords_target=torch.tensor(cross_graph.vert_out)
         normed_coords_target=torch.as_tensor(cross_graph.target.normed_coords)
-        cross_edge_idx=cross_graph.cross.edge_idx
+        cross_edge_index=cross_graph.cross.edge_index
         
         if interpolate and (gen_feature_mode != "position_only"):
             interpolated_values = self.inverse_distance_interpolation(
                 normed_values_source=normed_values_source,   # (N, F)
                 normed_coords_source=normed_coords_source,   # (N, D)
                 normed_coords_target=normed_coords_target,   # (M, D)
-                cross_edge_idx=cross_edge_idx,         # (2, E)
+                cross_edge_index=cross_edge_index,         # (2, E)
                 eps = 1e-12)
             constructed_features=self.get_node_features(normed_coords=normed_coords_target, normed_values=interpolated_values, mode=gen_feature_mode)
             
@@ -479,6 +514,7 @@ class Graph_Generator:
         return constructed_features.to(torch.float32)
     
     
+    @track_time
     def cross_graph_sampling(self, n_samples:int=None, perplexity:int=None, k_cross:int=None, interpolate_graph_features:bool=True, gen_feature_mode:str="channel_only",
                              N_in:int=None, k_in:int=None, input_sampling_method:str="random",
                              N_out:int=None, k_out:int=None, output_sampling_method:str="regular_subset"):

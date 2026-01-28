@@ -69,7 +69,9 @@ sys.path.append("../../src/dataset_utilities.py")
 
 from utilities_alphaEarth import (
     AlphaEarth_Graph_Generator,
-    GraphLMDBWriter
+    GraphLMDBWriter,
+    track_time,
+    _function_timings
 )
 
 
@@ -141,9 +143,48 @@ def main(config_id): #regular method
             writer.append(cross_graph.cpu())
         print()
     
+    
+    # --- Print execution times --- #
+    print("\nTiming summary:")
+
+    # dynamic column widths
+    name_width = max(len(name) for name in _function_timings) + 2
+    calls_width = max(len(str(stats["calls"])) for stats in _function_timings.values())
+    total_width = max(len(f"{stats['total']:.4f}") for stats in _function_timings.values())
+    avg_width = max(
+        len(f"{stats['total'] / stats['calls']:.4f}")
+        for stats in _function_timings.values()
+    )
+
+    # headers
+    header = (
+        f"{'Function':<{name_width}} | "
+        f"{'Calls':>{calls_width}} | "
+        f"{'Total (s)':>{total_width}} | "
+        f"{'Avg (s)':>{avg_width}}"
+    )
+    print(header)
+    print("-" * len(header))
+
+    # rows
+    for name, stats in sorted(
+        _function_timings.items(),
+        key=lambda x: x[1]["total"],
+        reverse=True,
+    ):
+        total = stats["total"]
+        calls = stats["calls"]
+        avg = total / calls
+
+        print(
+            f"{name:<{name_width}} | "
+            f"{calls:>{calls_width}d} | "
+            f"{total:>{total_width}.4f} | "
+            f"{avg:>{avg_width}.4f}"
+        )
 
 if __name__ == "__main__":
     main(config_id)
-
+    
 
 

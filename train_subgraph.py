@@ -276,8 +276,8 @@ def main():
             # Forward pass for subgraph model
             out = model(batch)
             # Compute affinities using output graph edges
-            q = get_output_affinities_subgraph(out, batch.edge_idx_out)
-            loss = custom_KL_loss(batch.input_affinities, q).mean()
+            q = get_output_affinities_subgraph(out, batch.target.edge_index)
+            loss = custom_KL_loss(batch.target.input_affinities, q).mean()
             initial_val_losses.append(loss.item())
     
     initial_val_loss = np.mean(initial_val_losses)
@@ -323,8 +323,8 @@ def main():
             # Forward pass for subgraph model
             out = model(batch)
             # Compute affinities using output graph edges
-            q = get_output_affinities_subgraph(out, batch.edge_idx_out)
-            loss = custom_KL_loss(batch.input_affinities, q).mean()
+            q = get_output_affinities_subgraph(out, batch.target.edge_index)
+            loss = custom_KL_loss(batch.target.input_affinities, q).mean()
             all_losses.append(loss.item())
             
             if use_wandb:
@@ -363,8 +363,8 @@ def main():
                 # Forward pass for subgraph model
                 out = model(batch)
                 # Compute affinities using output graph edges
-                q = get_output_affinities_subgraph(out, batch.edge_idx_out)
-                loss = custom_KL_loss(batch.input_affinities, q).mean()
+                q = get_output_affinities_subgraph(out, batch.target.edge_index)
+                loss = custom_KL_loss(batch.target.input_affinities, q).mean()
                 val_losses.append(loss.item())
         
         val_loss = np.mean(val_losses)
@@ -386,7 +386,7 @@ def main():
             })
         
         #print(f'Epoch: {ep}/{epochs} - Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
-        print(f'Epoch: {ep}/{epochs} - Loss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
+        print(f'\nEpoch: {ep}/{epochs} - Loss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
         
         # Save checkpoint every 5 epochs
         if ep % 5 == 0:

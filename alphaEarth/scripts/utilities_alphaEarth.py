@@ -19,9 +19,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'src'))
 from dataset_utilities import (
     GraphLMDBWriter,
     GraphLMDBReader,
+    
 )
 
-from generator_utility import Graph_Generator
+from generator_utility import (
+    Graph_Generator,
+    track_time,
+    _function_timings
+)
 
 
 if torch.cuda.is_available():
@@ -47,6 +52,7 @@ class AlphaEarth_Graph_Generator(Graph_Generator):
         #for key, value in sample_config.items():
         #    setattr(self, key, value)
 
+    @track_time
     def load_data(self, bbox:list=None, filename:str=None):
         """
         Load a bounding box from a large GeoTIFF and return as xarray.DataArray.
@@ -179,6 +185,7 @@ class AlphaEarth_Graph_Generator(Graph_Generator):
         return normed_coords
 
 
+    @track_time
     def generate_normed_sample(self, N:int=None, method:str=None):
         """
         This method generates a sample from initially loaded data self.da
