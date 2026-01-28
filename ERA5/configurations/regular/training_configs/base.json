@@ -1,6 +1,6 @@
 {
     "mode": "regular",
-    "dataset_id": "test123",
+    "dataset_id": "base",
     "model_id": "base",
     "epochs": 20,
     "learning_rate": 0.00001,

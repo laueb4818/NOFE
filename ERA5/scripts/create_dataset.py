@@ -81,8 +81,8 @@ def main(config_id): #regular method
     sampling_method=config['sampling_method']
     
     bbox = config['lon_min'], config['lat_min'], config['lon_max'], config['lat_max']
-    train_dates= pd.date_range(config["train_date_start_end"][0], config["train_date_start_end"][0]).strftime("%Y-%m-%d").tolist()
-    test_dates= pd.date_range(config["test_date_start_end"][0], config["test_date_start_end"][0]).strftime("%Y-%m-%d").tolist()
+    train_dates= pd.date_range(config["train_date_start_end"][0], config["train_date_start_end"][1]).strftime("%Y-%m-%d").tolist()
+    test_dates= pd.date_range(config["test_date_start_end"][0], config["test_date_start_end"][1]).strftime("%Y-%m-%d").tolist()
     
     # Train Set
     print('\nGenerate Training Set\n')
@@ -91,11 +91,8 @@ def main(config_id): #regular method
     
     
     for date in train_dates:
-        file_path = os.path.join(config["data_folder_path"], f"{date}.nc")
-        Generator = ERA5_Graph_Generator(file_path) 
-        Generator.load_data(bbox=bbox, vars=config['vars'], filename=file_path)
-
-
+        Generator = ERA5_Graph_Generator(config['data_folder_path']) 
+        Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
         
         for n in range(config["train_samples_per_date"]):
             print(f'{date}: {n+1}/{config["train_samples_per_date"]}', end='\r')
@@ -109,9 +106,8 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for date in test_dates:
-        file_path = os.path.join(config["data_folder_path"], f"{date}.nc")
-        Generator = ERA5_Graph_Generator(file_path) 
-        Generator.load_data(bbox=bbox, vars=config['vars'], filename=file_path)
+        Generator = ERA5_Graph_Generator(config['data_folder_path']) 
+        Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
         
         for n in range(config["test_samples_per_date"]):
             print(f'{date}: {n+1}/{config["test_samples_per_date"]}', end='\r')

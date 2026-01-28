@@ -114,8 +114,15 @@ def main(config_id): #regular method
         Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
         
         
-        out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
-        for n in range(config["train_samples_per_year"]):
+        # create once beofre loop if output gaph is regular -> more efficient
+        if config['output_sampling_method'] == "regular_subset":
+            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+        
+        for n in range(config["train_samples_per_year"]):   
+            # if output graph is not reused, it has to be created inside the loop
+            if config['output_sampling_method'] != "regular_subset":
+                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            
             out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["train_samples_per_year"]}', end='\r')
             in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
@@ -132,9 +139,14 @@ def main(config_id): #regular method
     for year in config["test_years"]:
         Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
         
-        out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+        if config['output_sampling_method'] == "regular_subset":
+            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
         
         for n in range(config["test_samples_per_year"]):
+            # if output graph is not reused, it has to be created inside the loop
+            if config['output_sampling_method'] != "regular_subset":
+                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            
             out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["test_samples_per_year"]}', end='\r')
             in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])

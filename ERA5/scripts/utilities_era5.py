@@ -17,9 +17,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../s
 
 from dataset_utilities import (
     GraphLMDBWriter,
-    GraphLMDBReader,
+    GraphLMDBReader
 )
-from generator_utility import Graph_Generator
+from generator_utility import (
+    Graph_Generator,
+    track_time,
+    _function_timings
+)
 
 
 #%%
@@ -27,7 +31,8 @@ class ERA5_Graph_Generator(Graph_Generator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)    
     
-    
+
+    @track_time
     def load_data(self, bbox:list=None, vars:list=None, time:str=None, filename:str=None):
         file_path = os.path.join(self.directory, filename)
         self.meta = Data(source_file=file_path)
@@ -105,7 +110,6 @@ class ERA5_Graph_Generator(Graph_Generator):
         self.grid_longitudes = np.linspace(bbox[0], bbox[2], self.da.shape[2])
     '''
     
-    
     def cartesian_projection(self, lat:np.ndarray=None, lon:np.ndarray=None):
         """
         Convert GPS coordinates (lat/lon) to ECEF coordinates (x, y, z)
@@ -179,7 +183,8 @@ class ERA5_Graph_Generator(Graph_Generator):
         
         return normed_coords
     
-    
+
+    @track_time
     def generate_normed_sample(self, N:int=None, method:str=None):
         """
         This method generates a sample from initially loaded data self.da

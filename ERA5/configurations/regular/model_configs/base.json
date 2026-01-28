@@ -1,6 +1,6 @@
 {
-    "width": 24,
-    "ker_width": 42,
+    "width": 32,
+    "ker_width": 32,
     "depth": 4,
     "node_features": 12,
     "edge_attr": 21,
