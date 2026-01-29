@@ -1,5 +1,5 @@
 {
-    "data_folder_path": "/Volumes/T7-storage/ERA5/data/",
+    "data_folder_path": "../data/",
     "dataset_save_path": "../datasets/subgraph/",
     "lat_min": 30,
     "lat_max": 70,

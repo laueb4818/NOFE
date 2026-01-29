@@ -1,5 +1,5 @@
 {
-    "data_folder_path": "/Volumes/T7-storage/alphaEarth/data/",
+    "data_folder_path": "../data/",
     "dataset_save_path": "../datasets/subgraph/",
     "bbox":[10.79, 59.66, 10.86, 59.73],
     "N_in": 3000,

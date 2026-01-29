@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-create-dataset
+  name: nofe-create-dataset-alphaearth
 spec:
   template:
     spec:
@@ -10,16 +10,16 @@ spec:
         operator: "Equal"
         value: "high"
         effect: "NoSchedule"
-      nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-3090"  
+      #nodeSelector:
+        #springfield.uit.no/gpu-type: "rtx-3090"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-create-dataset 
+      - name: nofe-create-dataset-alphaearth
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/alphaEarth/scripts/
         command: ["/bin/bash", "-c"]
-        args: ["python create_dataset.py regular_dataset1_base"]
+        args: ["python create_dataset.py base"]
         #stdin: true
         #tty: true
         env:
