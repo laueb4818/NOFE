@@ -294,7 +294,7 @@ def main():
         })
     
     #print(f'\nEpoch: 0/{epochs} - Val Loss: {round(initial_val_loss, 4)} (before training)\n')
-    print(f'\nEpoch: 0/{epochs} - Val Loss: {initial_val_loss} (before training)\n')
+    print(f'\nVal Loss: {initial_val_loss} (before training)\n')
     
     future = None
     
@@ -386,7 +386,7 @@ def main():
             })
         
         #print(f'Epoch: {ep}/{epochs} - Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
-        print(f'\nEpoch: {ep}/{epochs} - Loss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
+        print(f'\nLoss: {avg_loss}\t|  Val Loss: {val_loss}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
         
         # Save checkpoint every 5 epochs
         if ep % 5 == 0:
