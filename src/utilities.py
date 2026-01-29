@@ -246,12 +246,11 @@ class KernelNN_subgraph(nn.Module):
 # Loss Functions
 # ============================================================================
 
-def transition_prob_t_dist(a, b):
+def OLD_transition_prob_t_dist(a, b):
     """Compute t-distribution based transition probabilities."""
     return 1 / (1 + torch.sum((a - b) ** 2, dim=-1))
 
-
-def get_output_affinities(output, edges):
+def OLD_get_output_affinities(output, edges):
     """
     Compute output affinities using t-distribution.
     
@@ -267,6 +266,70 @@ def get_output_affinities(output, edges):
     w = w.view(output.shape[0], -1)  # reshape to [N, k]
     q = w / (w.sum(dim=1, keepdim=True) + eps)
     return q
+
+
+
+def student_t_kernel(x, y):
+    """
+    Student-t kernel similarity between two sets of points.
+    x, y: [E, D]
+    returns: [E]
+    """
+    return 1.0 / (1.0 + ((x - y) ** 2).sum(dim=1))
+
+
+@torch.no_grad()
+def estimate_global_Z(output, num_samples=4096):
+    """
+    Monte Carlo estimate of Z = sum_{i!=j} 1/(1 + ||y_i - y_j||^2)
+    """
+    N = output.shape[0]
+    device = output.device
+
+    idx_i = torch.randint(0, N, (num_samples,), device=device)
+    idx_j = torch.randint(0, N, (num_samples,), device=device)
+
+    mask = idx_i != idx_j
+    idx_i = idx_i[mask]
+    idx_j = idx_j[mask]
+
+    diff = output[idx_i] - output[idx_j]
+    w = 1.0 / (1.0 + (diff ** 2).sum(dim=1))
+
+    Z_est = w.mean() * (N * (N - 1))
+    return Z_est
+
+
+def get_output_affinities(output, edges, num_mc_samples=4096, eps=1e-8):
+    """
+    Compute low-D t-SNE affinities for neighbors with global Monte Carlo normalization.
+    
+    Args:
+        output: Tensor [N, D]
+        edges: LongTensor [2, E] (neighbor index pairs)
+        num_mc_samples: samples for global normalization
+        eps: numerical stability
+        
+    Returns:
+        q: Tensor [N, k] same shape as original method
+    """
+    N = output.shape[0]
+    k = edges.shape[1] // N  # assuming edges are ordered per node as in your original method
+
+    # ---- estimate global normalization ----
+    Z = estimate_global_Z(output, num_mc_samples) + eps
+
+    # ---- compute neighbor similarities ----
+    w = student_t_kernel(output[edges[0]], output[edges[1]])
+
+    # ---- reshape to [N, k] ----
+    q = w.view(N, k)
+
+    # ---- normalize globally ----
+    q = q / Z
+
+    return q
+
 
 
 def custom_KL_loss(affinities_in, affinities_out, eps=1e-6):

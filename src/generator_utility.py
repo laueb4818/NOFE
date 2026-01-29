@@ -49,7 +49,7 @@ class Graph_Generator:
     Actual classes will need to extend this e.g. by loading
     """
     def __init__(self, datafolder:str):
-        self.directory=datafolder
+        self.directory= os.path.realpath(datafolder)
     
     @track_time
     def load_data(self):

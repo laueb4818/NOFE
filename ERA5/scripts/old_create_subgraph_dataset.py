@@ -144,7 +144,9 @@ def main():
         random_seed=seed
     )
     
-    # Print summary
+    
+    
+    # --------- Print summary --------------
     print_subgraph_summary(config_name, train_dates, test_dates, config)
     
     # Create training dataset
