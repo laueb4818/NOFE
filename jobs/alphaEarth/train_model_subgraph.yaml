@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-alphaEarth-train-subgraph
+  name: nofe-alphaearth-train-subgraph
 spec:
   template:
     spec:
@@ -15,9 +15,9 @@ spec:
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-alphaEarth-train-subgraph
+      - name: nofe-alphaearth-train-subgraph
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage/old/NOFE-general/
+        workingDir: /storage/NOFE-general/
         command: ["/bin/bash", "-c"]
         args: ["python train_subgraph.py alphaEarth/base"] # 
         #stdin: true
