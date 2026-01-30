@@ -246,7 +246,7 @@ class KernelNN_subgraph(nn.Module):
 # Loss Functions
 # ============================================================================
 
-def OLD_transition_prob_t_dist(a, b):
+def transition_prob_t_dist(a, b):
     """Compute t-distribution based transition probabilities."""
     return 1 / (1 + torch.sum((a - b) ** 2, dim=-1))
 
@@ -278,7 +278,6 @@ def student_t_kernel(x, y):
     return 1.0 / (1.0 + ((x - y) ** 2).sum(dim=1))
 
 
-@torch.no_grad()
 def estimate_global_Z(output, num_samples=4096):
     """
     Monte Carlo estimate of Z = sum_{i!=j} 1/(1 + ||y_i - y_j||^2)
