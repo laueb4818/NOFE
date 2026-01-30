@@ -298,6 +298,29 @@ def estimate_global_Z(output, num_samples=4096):
     Z_est = w.mean() * (N * (N - 1))
     return Z_est
 
+def exact_global_Z(output, eps=1e-8):
+    """
+    Exact computation of
+    Z = sum_{i != j} 1 / (1 + ||y_i - y_j||^2)
+
+    Args:
+        output: Tensor [N, D]
+    Returns:
+        scalar tensor Z
+    """
+    # pairwise squared distances: [N, N]
+    dist2 = torch.cdist(output, output, p=2.0) ** 2
+
+    # student-t kernel
+    w = 1.0 / (1.0 + dist2)
+
+    # remove diagonal (i == j)
+    w.fill_diagonal_(0.0)
+
+    Z = w.sum() + eps
+    return Z
+
+
 
 def get_output_affinities(output, edges, num_mc_samples=4096, eps=1e-8):
     """
@@ -316,7 +339,10 @@ def get_output_affinities(output, edges, num_mc_samples=4096, eps=1e-8):
     k = edges.shape[1] // N  # assuming edges are ordered per node as in your original method
 
     # ---- estimate global normalization ----
-    Z = estimate_global_Z(output, num_mc_samples) + eps
+    #Z = estimate_global_Z(output, num_mc_samples) + eps
+    
+    # ---- exact global normalization ----
+    Z = exact_global_Z(output, eps=eps)
 
     # ---- compute neighbor similarities ----
     w = student_t_kernel(output[edges[0]], output[edges[1]])
