@@ -1,5 +1,4 @@
 {
-    "mode": "subgraph",
     "dataset_id": "subgraph_base",
     "model_id": "base",
     "epochs": 20,
