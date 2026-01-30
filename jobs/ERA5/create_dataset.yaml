@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/ERA5/scripts/
         command: ["/bin/bash", "-c"]
-        args: ["python create_subgraph_dataset.py base"]
+        args: ["python create_dataset.py base"]
         #stdin: true
         #tty: true
         env:

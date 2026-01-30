@@ -1,0 +1,47 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: nofe-training 
+spec:
+  template:
+    spec:
+      tolerations:
+      - key: "vram"
+        operator: "Equal"
+        value: "high"
+        effect: "NoSchedule"
+#      nodeSelector:
+#        springfield.uit.no/gpu-type: "rtx-3090"  
+      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
+      hostIPC: true
+      containers:
+      - name: nofe-training-1
+        image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
+        workingDir: /storage/NOFE-general/
+        command: ["/bin/bash", "-c"]
+        args: ["python train.py ERA5/base"]
+        #stdin: true
+        #tty: true
+        env:
+        - name: WANDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: wandb
+              key: apikey
+        volumeMounts:
+        - name: storage
+          mountPath: /storage
+        - name: storage2
+          mountPath: /storage2
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: storage
+        - name: storage2
+          persistentVolumeClaim:
+            claimName: storage2
+      restartPolicy: OnFailure
+  backoffLimit: 0
+
+
+

@@ -49,7 +49,7 @@ class ERA5_Graph_Generator(Graph_Generator):
             lat_max_min = (max_lat, min_lat)
             lon_min_max = (min_lon, max_lon)
         
-        ds = xr.open_dataset(file_path)
+        ds = xr.open_dataset(file_path, engine="netcdf4")
         
         # Convert all longitudes to [-180, 180] format
         ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180))
