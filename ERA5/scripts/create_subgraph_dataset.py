@@ -65,7 +65,7 @@ def main(config_id): #regular method
     data_folder = config["data_folder_path"]
     Generator = ERA5_Graph_Generator(data_folder) 
 
-for date in train_dates:
+    for date in train_dates:
         Generator.load_data(bbox=bbox, vars=config['vars'], filename=f'{date}.nc')
         
         # create once beofre loop if output gaph is regular -> more efficient
