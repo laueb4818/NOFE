@@ -62,11 +62,11 @@ def main(config_id): #regular method
     print('\nGenerate Training Set\n')
     
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
-    
-    for date in train_dates:
-        file_path = os.path.join(config["data_folder_path"], f"{date}.nc")
-        Generator = ERA5_Graph_Generator(file_path) 
-        Generator.load_data(bbox=bbox, vars=config['vars'], filename=file_path)
+    data_folder = config["data_folder_path"]
+    Generator = ERA5_Graph_Generator(data_folder) 
+
+for date in train_dates:
+        Generator.load_data(bbox=bbox, vars=config['vars'], filename=f'{date}.nc')
         
         # create once beofre loop if output gaph is regular -> more efficient
         if config['output_sampling_method'] == "regular_subset":
@@ -90,8 +90,6 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for date in test_dates:
-        file_path = os.path.join(config["data_folder_path"], f"{date}.nc")
-        Generator = ERA5_Graph_Generator(file_path) 
         Generator.load_data(bbox=bbox, vars=config['vars'], filename=file_path)
         
         # create once beofre loop if output gaph is regular -> more efficient

@@ -88,10 +88,9 @@ def main(config_id): #regular method
     print('\nGenerate Training Set\n')
     
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
-    
+    Generator = ERA5_Graph_Generator(config["data_folder_path"])
     
     for date in train_dates:
-        Generator = ERA5_Graph_Generator(config['data_folder_path']) 
         Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
         
         for n in range(config["train_samples_per_date"]):
@@ -106,7 +105,6 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for date in test_dates:
-        Generator = ERA5_Graph_Generator(config['data_folder_path']) 
         Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
         
         for n in range(config["test_samples_per_date"]):
