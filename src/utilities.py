@@ -250,7 +250,7 @@ def transition_prob_t_dist(a, b):
     """Compute t-distribution based transition probabilities."""
     return 1 / (1 + torch.sum((a - b) ** 2, dim=-1))
 
-def OLD_get_output_affinities(output, edges):
+def get_output_affinities_local_norm(output, edges):
     """
     Compute output affinities using t-distribution.
     
@@ -322,7 +322,7 @@ def exact_global_Z(output, eps=1e-8):
 
 
 
-def get_output_affinities(output, edges, num_mc_samples=4096, eps=1e-8):
+def get_output_affinities_global_norm(output, edges, num_mc_samples=4096, eps=1e-8):
     """
     Compute low-D t-SNE affinities for neighbors with global Monte Carlo normalization.
     
@@ -355,6 +355,8 @@ def get_output_affinities(output, edges, num_mc_samples=4096, eps=1e-8):
 
     return q
 
+
+get_output_affinities = get_output_affinities_local_norm
 
 
 def custom_KL_loss(affinities_in, affinities_out, eps=1e-6):
