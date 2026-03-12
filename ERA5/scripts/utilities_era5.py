@@ -54,6 +54,9 @@ class ERA5_Graph_Generator(Graph_Generator):
         # Convert all longitudes to [-180, 180] format
         ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180))
         
+        # Sort by longitude to ensure correct ordering after coordinate transformation
+        ds = ds.sortby('longitude')
+        
         # Apply longitude range condition
         if lon_min_max is not None: 
             l0, l1 = lon_min_max
