@@ -1,0 +1,11 @@
+{
+    "mode": "regular",
+    "dataset_id": "base_many",
+    "model_id": "base",
+    "epochs": 100,
+    "learning_rate": 0.0005,
+    "scheduler_step": 5,
+    "scheduler_gamma": 0.9
+}
+
+

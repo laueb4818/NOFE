@@ -278,6 +278,7 @@ def main():
         
         # Training
         for i, train_ind in enumerate(train_indices):
+
             print(f"\r\033[KEpoch {ep}/{epochs} - Training: {i+1}/{len(train_indices)}", end="", flush=True)
             
             # Prefetch next batch
@@ -306,7 +307,7 @@ def main():
             loss.backward()
             optimizer.step()
         
-        avg_loss = np.mean(all_losses)
+        avg_loss = np.mean(all_losses) + 10e-8
         loss_record.append(avg_loss)
         epoch_record.append(ep)
         lr_record.append(scheduler.get_last_lr()[0])

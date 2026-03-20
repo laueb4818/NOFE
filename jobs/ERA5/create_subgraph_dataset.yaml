@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-subgraph-create-dataset-era5
+  name: nofe-subgraph-create-dataset-era5-random-outputs
 spec: 
   template:
     spec:

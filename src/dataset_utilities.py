@@ -453,7 +453,9 @@ class GraphLMDBWriter:
             raw_len = txn.get(b'__len__')
             self.length = int(raw_len.decode()) if raw_len else 0
 
-    def append(self, data: Data):
+    def append(self, data: Data, to_cpu=True):
+        if to_cpu:
+            data = data.detach().cpu()
         with self.env.begin(write=True) as txn:
             txn.put(str(self.length).encode(), pickle.dumps(data))
             self.length += 1

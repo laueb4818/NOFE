@@ -68,7 +68,7 @@ def main(config_id): #regular method
     print("Configuration:\n")
     print(*[f"{k}: {v}" for k, v in config.items()], sep="\n")
     
-        
+    
     if os.path.exists(f'{config["dataset_save_path"]}/{config_id}_train.lmdb'):
         print('dataset already exists -- STOP')
         return()
@@ -97,9 +97,14 @@ def main(config_id): #regular method
             print(f'skipping file "{f}"')
         if type(f)==int:
             datafolders.append(str(f))
+    print(f'available files:\n{datafolders}\n')
     random.shuffle(datafolders)
-    train_folders = datafolders[:int(0.8*len(datafolders))]
-    test_folders = datafolders[int(0.8*len(datafolders)):]
+    train_folders = datafolders[:int(0.7*len(datafolders))]
+    test_folders = datafolders[int(0.8*len(datafolders)):int(0.9*len(datafolders))]
+    remaining_folders = datafolders[int(0.9*len(datafolders)):]
+    print(f'Used for training data:\n{train_folders}\n')
+    print(f'Used for validation data:\n{test_folders}\n')
+    print(f'Remaining for tests:\n{remaining_folders}\n')
     
     for folder in train_folders:
         path = config['data_folder_path']+folder+"/T1w/Diffusion/"

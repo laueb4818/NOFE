@@ -117,9 +117,9 @@ class dMRI_Graph_Generator(Graph_Generator):
         
         #self.normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
         # more efficient. previously: normed_values = torch.tensor(self.da[:, indices[:,0], indices[:,1]].T)
-        normed_values = self.da[indices, :].copy()
-        normed_coords = self.normed_coords[indices, :].copy()
-        meta = self.meta.copy()
+        normed_values = self.da[indices, :].detach().clone()
+        normed_coords = self.normed_coords[indices, :].detach().clone()
+        meta = self.meta.detach().clone()
         
         return normed_values, normed_coords, meta
 
