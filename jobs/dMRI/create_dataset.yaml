@@ -10,13 +10,13 @@ spec:
         operator: "Equal"
         value: "high"
         effect: "NoSchedule"
-      nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-3090"  
+#      nodeSelector:
+#        springfield.uit.no/gpu-type: "rtx-3090"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
       - name: nofe-create-dataset-dmri
-        image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
+        image: "laueb4818/neural-operators-new3:dMRI"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/dMRI/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_dataset.py base_many"]

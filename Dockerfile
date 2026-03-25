@@ -40,6 +40,10 @@ RUN pip install --no-cache-dir -r requirements2.txt
 # make sure numpy is less than 2.0
 RUN pip install "numpy<2.0" --no-cache-dir  # Re-assert numpy version
 
+RUN pip install nibabel==5.3.2
+
+RUN pip install dipy==1.11.0
+
 # Copy the rest of the project (optional)
 # COPY . .
 

@@ -11,7 +11,7 @@ spec:
         value: "high"
         effect: "NoSchedule"
 #      nodeSelector:
- #       springfield.uit.no/gpu-type: "rtxi-3090"  
+#        springfield.uit.no/gpu-type: "rtxi-3090"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/ERA5/scripts/
         command: ["/bin/bash", "-c"]
-        args: ["python create_dataset_random_crop_v2.py base"]
+        args: ["python create_dataset_random_crop_v2.py dataset1"]
         #stdin: true
         #tty: true
         env:
