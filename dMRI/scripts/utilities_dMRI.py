@@ -105,6 +105,8 @@ class dMRI_Graph_Generator(Graph_Generator):
         
         if method=="random":
             indices = random.sample(range(N_total), N)
+            # Convert to tensor to avoid CUDA indexing errors
+            indices = torch.tensor(indices, dtype=torch.long)
         
         elif method=="interpolate":
             pass

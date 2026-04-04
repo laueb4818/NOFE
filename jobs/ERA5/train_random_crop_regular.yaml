@@ -10,8 +10,8 @@ spec:
         operator: "Equal"
         value: "high"
         effect: "NoSchedule"
-      nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-A6000"  
+#      nodeSelector:
+#        springfield.uit.no/gpu-type: "rtx-A6000"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/
         command: ["/bin/bash", "-c"]
-        args: ["python train_era5_random_crop.py ERA5/base"] # 
+        args: ["python train_era5_random_crop.py ERA5/base1"] # 
         #stdin: true
         #tty: true
         env:

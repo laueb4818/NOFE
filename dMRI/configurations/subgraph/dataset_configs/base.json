@@ -1,0 +1,16 @@
+{
+    "data_folder_path": "../../../dMRI/",
+    "dataset_save_path": "../datasets/subgraph/",
+    "N_in": 5000,
+    "N_out": 10000,
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 5,
+    "perplexity": 10,
+    "input_sampling_method": "random",
+    "output_sampling_method": "random",
+    "train_samples_per_file": 100,
+    "test_samples_per_file": 20,
+    "feature_mode": "channel_and_position",
+    "interpolate_graph_features": true
+}

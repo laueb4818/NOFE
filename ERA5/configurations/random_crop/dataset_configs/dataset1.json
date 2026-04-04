@@ -10,7 +10,7 @@
     "sampling_method": "random",
     "train_date_start_end": ["2018-01-01", "2018-12-31"],
     "test_date_start_end": ["2019-01-01", "2019-03-31"],
-    "train_samples_per_date": 200,
+    "train_samples_per_date": 50,
     "test_samples_per_date": 20,
     "feature_mode": "channel_only",
     "vars": ["w", "v", "z", "q", "r", "t", "d", "o3", "pv", "u", "vo"]

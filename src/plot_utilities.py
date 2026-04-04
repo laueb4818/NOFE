@@ -3,7 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import griddata
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
+
+# ==============================================================
+# ============================ dMRI ============================
+# ==============================================================
 def plot_results_napari(output_np, gps_np):
     # -----------------------------
     # Input data
@@ -161,4 +167,58 @@ def plot_results_matplotlib(output_np, gps_np):
 
     fig.tight_layout()
     plt.close(fig)        # close before returning
+    return fig
+
+# ============================================================
+# =========================== ERA5 ===========================
+# ============================================================
+def scale_channels_with_percentile(res, rgb_channels, percentile=5):
+    res[rgb_channels] = res[rgb_channels].apply(
+        lambda x: (
+            (x - x.mean()) /
+            (2 * max(abs(x.mean() - x.quantile(percentile / 100)), abs(x.mean() - x.quantile(1 - percentile / 100))))
+        ) + 0.5
+    )
+    return res
+
+def rgb_scale(res, percentile = 10, scatter=False, figsize=(15, 15), resolution=500):
+    rgb_channels = ['x1', 'x2', 'x3']
+    res = scale_channels_with_percentile(res, rgb_channels, percentile=percentile)
+    
+    projection = ccrs.PlateCarree()
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': projection})
+    ax.set_extent([res['lon'].min(), res['lon'].max(), res['lat'].min(), res['lat'].max()], crs=ccrs.PlateCarree())
+    
+    # Add map features
+    ax.coastlines()
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+    
+    if scatter:
+        # Plot individual points as RGB scatter
+        rgb_colors = res[rgb_channels].values
+        ax.scatter(res['lon'], res['lat'], color=rgb_colors, s=5, transform=ccrs.PlateCarree())
+    else:
+        # Interpolated surface
+        rgb_image = res[rgb_channels].values
+        lon_grid = np.linspace(res['lon'].min(), res['lon'].max(), resolution)
+        lat_grid = np.linspace(res['lat'].min(), res['lat'].max(), resolution)
+        lon_grid, lat_grid = np.meshgrid(lon_grid, lat_grid)
+        
+        rgb_grid = np.zeros((lat_grid.shape[0], lat_grid.shape[1], 3))
+        for i in range(3):
+            rgb_grid[:, :, i] = griddata(
+                (res['lon'], res['lat']),
+                rgb_image[:, i],
+                (lon_grid, lat_grid),
+                method='cubic'
+            )
+            
+        ax.imshow(
+            rgb_grid,
+            extent=(res['lon'].min(), res['lon'].max(), res['lat'].min(), res['lat'].max()),
+            origin='lower',
+            transform=ccrs.PlateCarree(),
+            interpolation='bilinear'
+        )
+        
     return fig

@@ -1,9 +1,9 @@
 {
     "mode": "random_crop",
-    "dataset_id": "base",
+    "dataset_id": "dataset1",
     "model_id": "base",
     "epochs": 20,
-    "learning_rate": 0.000001,
+    "learning_rate": 0.0001,
     "scheduler_step": 4,
     "scheduler_gamma": 0.8
 }

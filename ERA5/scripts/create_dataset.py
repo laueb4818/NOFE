@@ -67,7 +67,6 @@ def main(config_id): #regular method
     print("Configuration:\n")
     print(*[f"{k}: {v}" for k, v in config.items()], sep="\n")
     
-        
     if os.path.exists(f'{config["dataset_save_path"]}/{config_id}_train.lmdb'):
         print('dataset already exists -- STOP')
         return()
