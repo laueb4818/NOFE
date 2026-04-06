@@ -50,6 +50,7 @@ class Graph_Generator:
     """
     def __init__(self, datafolder:str):
         self.directory= os.path.realpath(datafolder)
+        self.eps = 1e-8
     
     @track_time
     def load_data(self):
@@ -178,7 +179,7 @@ class Graph_Generator:
 
         regularized_distances = (
             edge_dist.squeeze() /
-            max_dist_per_node[edge_indices[0]]
+            (max_dist_per_node[edge_indices[0]] + self.eps)
         ).unsqueeze(1)
 
         # ---- Displacement vectors ----
@@ -187,7 +188,7 @@ class Graph_Generator:
         absolute_displacement = source_nodes - target_nodes
 
         norm = torch.norm(absolute_displacement, dim=1, keepdim=True)
-        normed_displacement = absolute_displacement / (norm + 1e-12)
+        normed_displacement = absolute_displacement / (norm + self.eps)
 
         if include_feat_diff:
             print("including feature difference not yet implemented. Continuing without")
@@ -224,7 +225,6 @@ class Graph_Generator:
         normed_coords_source: torch.Tensor,   # (N, D)
         normed_coords_target: torch.Tensor,   # (M, D)
         cross_edge_index: torch.Tensor,         # (2, E)
-        eps: float = 1e-12
     ):
         """
         Interpolate source features to target points using inverse distance weighting.
@@ -238,7 +238,7 @@ class Graph_Generator:
         
         # 2. Compute distances for each edge
         diff = normed_coords_target[target_idx] - normed_coords_source[source_idx]  # (E, D)
-        dist = torch.norm(diff, dim=1) + eps  # avoid division by zero, shape (E,)
+        dist = torch.norm(diff, dim=1) + self.eps  # avoid division by zero, shape (E,)
         
         # 3. Compute weights
         weights = 1.0 / dist  # (E,)
@@ -285,11 +285,11 @@ class Graph_Generator:
                 P = np.exp(-Di * beta)
                 sumP = np.sum(P)
                 if sumP == 0:
-                    sumP = 1e-10  # avoid division by zero
+                    sumP = self.eps  # avoid division by zero
                 P /= sumP
                 
                 # Compute entropy H(P)
-                H = -np.sum(P * np.log(P + 1e-10))
+                H = -np.sum(P * np.log(P + self.eps))
                 H_diff = H - log_perplexity
                 
                 if np.abs(H_diff) < tol:
@@ -351,7 +351,7 @@ class Graph_Generator:
             p_ij = p_ij / p_ij_sum
 
             # Compute entropy H(P_i)
-            H = -(p_ij * torch.log2(p_ij + 1e-12)).sum(dim=1) # shape (N,)
+            H = -(p_ij * torch.log2(p_ij + self.eps)).sum(dim=1) # shape (N,)
 
             # Binary search update
             mask = H > log_perplexity # need larger sigma
@@ -383,7 +383,6 @@ class Graph_Generator:
             Tensor: [N, k] affinity values (p_j|i) normalized per source node
         """
         
-        eps = 1e-6
         
         # Get node embeddings for source and target
         x_i = normed_values[edge_indices[0, :]]  # [E, D]
@@ -394,7 +393,7 @@ class Graph_Generator:
         sqdist = torch.sum((x_i - x_j) ** 2, dim=1)
         
         # Compute affinities using Gaussian kernel with per-point sigma
-        denom = 2 * sigma_i ** 2 + eps
+        denom = 2 * sigma_i ** 2 + self.eps
         v = torch.exp(-sqdist / denom)  # [E]
         
         # Group v into rows of shape [N, k]
@@ -403,7 +402,7 @@ class Graph_Generator:
         v = v.view(N, k)
         
         # Normalize to get conditional probabilities p_j|i
-        p = v / (v.sum(dim=1, keepdim=True) + eps)  # [N, k]
+        p = v / (v.sum(dim=1, keepdim=True) + self.eps)  # [N, k]
         p = p.to(torch.float32)
         
         return p #input affinities
@@ -504,8 +503,7 @@ class Graph_Generator:
                 normed_values_source=normed_values_source,   # (N, F)
                 normed_coords_source=normed_coords_source,   # (N, D)
                 normed_coords_target=normed_coords_target,   # (M, D)
-                cross_edge_index=cross_edge_index,         # (2, E)
-                eps = 1e-12)
+                cross_edge_index=cross_edge_index)         # (2, E)
             constructed_features=self.get_node_features(normed_coords=normed_coords_target, normed_values=interpolated_values, mode=gen_feature_mode)
             
         else:
