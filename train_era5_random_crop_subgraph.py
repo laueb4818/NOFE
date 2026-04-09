@@ -253,10 +253,21 @@ def main():
         print(f'Epoch 0/{epochs} - Validation: {j+1}/{len(val_indices)}', end='\r')
         batch = load_batch(val_reader, val_ind)
         batch = batch.to(device)
-        
+        '''
+        print(batch.target.edge_index.dtype == torch.long)
+        print(batch.target.x.dtype == torch.float32)
+        print(batch.target.edge_attr.dtype == torch.float32)
+        print(batch.target.input_affinities.dtype == torch.float32)
+        print(batch.source.edge_index.dtype == torch.long)
+        print(batch.source.x.dtype == torch.float32)
+        print(batch.source.edge_attr.dtype == torch.float32)
+        print(batch.source.input_affinities.dtype == torch.float32)
+        '''
         with torch.no_grad():
             out = model(batch)
             q = get_output_affinities(out, batch.target.edge_index)
+            #print(f'output type: {out.dtype}')
+            #print(f'q type: {q.dtype}')
             loss = custom_KL_loss(batch.target.input_affinities, q).mean()
             initial_val_losses.append(loss.item())
     
@@ -281,6 +292,7 @@ def main():
         epoch_start_time = time.time()
         model.train()
         all_losses = []
+        gns = []
         
         # Training
         for i, train_ind in enumerate(train_indices):
@@ -311,6 +323,12 @@ def main():
             
             # Backward pass
             loss.backward()
+            # get magnitude of gradients before clipping
+            gn = torch.sqrt(torch.stack([p.grad.norm()**2 for p in model.parameters() if p.grad is not None]).sum())
+            gns.append(gn)
+            #print(gn)
+            # gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
         
         avg_loss = np.mean(all_losses) + 10e-8
@@ -363,7 +381,7 @@ def main():
             })
         
         print(" " * 120, end="\r")
-        print(f'Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Time: {time_str}')
+        print(f'Loss: {round(avg_loss, 4)}\t|  Val Loss: {round(val_loss, 4)}\t|  LR: {round(scheduler.get_last_lr()[0], 7)}\t|  Grad: {sum(gns) / len(gns)}\t|  Time: {time_str}')
         
         # Save checkpoint every 5 epochs
         if ep % 5 == 0:

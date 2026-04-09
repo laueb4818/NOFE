@@ -5,7 +5,7 @@
     "lat_max": 70,
     "lon_min": -10,
     "lon_max": 30,
-    "N_in": 10000,
+    "N_in": 8000,
     "N_out": 10000,
     "k_in": 5,
     "k_out": 5,
