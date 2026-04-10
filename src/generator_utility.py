@@ -334,7 +334,10 @@ class Graph_Generator:
         distances = distances.float()
 
         # Compute log2(perplexity)
-        log_perplexity = torch.log2(torch.tensor(perplexity, device=distances.device))
+        log_perplexity = torch.log(torch.tensor(perplexity, device=distances.device))
+        # DEPRECATED: Using log2 produced different sigma values than expected for the same
+        # perplexity setting. Standard t-SNE and the reference implementation use natural log.
+        # log_perplexity = torch.log2(torch.tensor(perplexity, device=distances.device))
 
         # Initialize sigma bounds
         sigma_min = torch.zeros(N, device=distances.device)

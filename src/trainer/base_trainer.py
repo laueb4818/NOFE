@@ -140,7 +140,8 @@ class BaseTrainer(ABC):
         
         dataset_config_path = dataset_path / f"{dataset_id}_config.json"
         
-        trained_models_path = dataset_path.parent.parent / "trained_models"
+        mode = self.config.get('mode', 'regular')
+        trained_models_path = dataset_path.parent.parent / "trained_models" / mode
         training_logs_path = trained_models_path / "logs"
         
         trained_models_path.mkdir(parents=True, exist_ok=True)
@@ -157,7 +158,7 @@ class BaseTrainer(ABC):
             dataset_dict = json.load(f)
         
         time_string = strftime("%Y-%m-%d_t%H-%M-%S", localtime())
-        self.model_id = f"{model_id}-{time_string}"
+        self.model_id = f"{model_id}-{mode}-{time_string}"
         
         self.network_dict = {**self.config, **model_dict, **dataset_dict}
         

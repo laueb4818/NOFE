@@ -15,11 +15,11 @@ spec:
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-era5-trainer
+      - name: nofe-era5-trainer-new-version
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_subgraph.py ERA5/base_test_subgraph"] # 
+        args: ["python train_standard.py ERA5/new_version"] # 
         #stdin: true
         #tty: true
         env:

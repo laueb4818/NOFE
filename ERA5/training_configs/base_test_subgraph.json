@@ -2,12 +2,12 @@
     "model_config_path": "ERA5/configurations/subgraph/model_configs/base.json",
     "dataset_id": "base",
     "dataset_path": "ERA5/datasets/subgraph",
-    "learning_rate": 0.00001,
+    "learning_rate": 0.0001,
     "scheduler_step": 10,
     "scheduler_gamma": 0.9,
     "epochs": 100,
     "random_seed": 42,
     "use_gradient_clipping": true,
-    "track_gradients": false,
+    "track_gradients": true,
     "checkpoint_every": 5
 }

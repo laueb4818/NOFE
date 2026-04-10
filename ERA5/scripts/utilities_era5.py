@@ -82,10 +82,22 @@ class ERA5_Graph_Generator(Graph_Generator):
         ds = ds.squeeze(dim=['valid_time', 'pressure_level'])
         
         arr = ds.values        
-        mean = np.nanmean(arr, axis=0)  # shape (N1, N2)
-        std = np.nanstd(arr, axis=0)
-        std[std == 0] = 1
-        self.da = (arr - mean) / std
+        for c in range(arr.shape[0]):
+            channel = arr[c]
+            mean = np.nanmean(channel)
+            std = np.nanstd(channel)
+            if std == 0:
+                std = 1
+            arr[c] = (channel - mean) / (std + 1e-8)
+        self.da = arr
+        # DEPRECATED: Previous normalization averaged across channels (different units/magnitudes),
+        # which destroys physical meaning. Each channel (temperature, pressure, etc.) must be 
+        # normalized independently to preserve comparability.
+        # arr = ds.values        
+        # mean = np.nanmean(arr, axis=0)  # shape (N1, N2) - spatial mean!
+        # std = np.nanstd(arr, axis=0)
+        # std[std == 0] = 1
+        # self.da = (arr - mean) / std
         
         self.grid_latitudes = np.linspace(bbox[1], bbox[3], self.da.shape[1])
         self.grid_longitudes = np.linspace(bbox[0], bbox[2], self.da.shape[2])
