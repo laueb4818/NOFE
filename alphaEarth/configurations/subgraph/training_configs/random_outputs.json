@@ -1,7 +1,8 @@
 {
     "mode": "subgraph",
+    "model_config_path": "alphaEarth/configurations/subgraph/model_configs/base.json",
     "dataset_id": "random_outputs",
-    "model_id": "base",
+    "dataset_path": "alphaEarth/datasets/subgraph",
     "epochs": 20,
     "batch_size": 1,
     "learning_rate": 0.0001,

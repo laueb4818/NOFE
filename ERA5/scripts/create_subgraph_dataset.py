@@ -108,6 +108,11 @@ def main(config_id): #regular method
             writer.append(cross_graph)
         print()
 
+    # Save config alongside dataset
+    config_save_path = config["dataset_save_path"]
+    with open(f'{config_save_path}/{config_id}_config.json', 'w') as f:
+        json.dump(config, f, indent=4)
+
     # --- Print execution times --- #
     print("\nTiming summary:")
 

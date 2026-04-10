@@ -1,7 +1,8 @@
 {
     "mode": "subgraph",
+    "model_config_path": "dMRI/configurations/subgraph/model_configs/base.json",
     "dataset_id": "base",
-    "model_id": "base",
+    "dataset_path": "dMRI/datasets/subgraph",
     "epochs": 100,
     "batch_size": 1,
     "learning_rate": 0.0005,

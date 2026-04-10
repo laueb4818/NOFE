@@ -1,7 +1,8 @@
 {
     "mode": "random_crop",
+    "model_config_path": "ERA5/configurations/random_crop/model_configs/base.json",
     "dataset_id": "dataset1",
-    "model_id": "base",
+    "dataset_path": "ERA5/datasets/random_crop",
     "epochs": 20,
     "learning_rate": 0.0001,
     "scheduler_step": 4,

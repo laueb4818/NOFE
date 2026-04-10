@@ -1,8 +1,6 @@
 {
-    "model_id": "base",
     "model_config_path": "ERA5/configurations/regular/model_configs/base.json",
-    "dataset_id": "base",
-    "dataset_config_path": "ERA5/configurations/regular/dataset_configs/base.json",
+    "dataset_id": "test_new",
     "dataset_path": "ERA5/datasets/regular",
     "learning_rate": 0.0001,
     "scheduler_step": 4,

@@ -98,8 +98,7 @@ def main():
     
     training_config_path = data_dir / "configurations" / "regular" / "training_configs"
     model_config_path = data_dir / "configurations" / "regular" / "model_configs"
-    dataset_configs_path = data_dir / "configurations" / "regular" / "dataset_configs"
-    dataset_path = data_dir / "datasets/regular"
+    dataset_path = Path(train_dict.get('dataset_path', str(data_dir / "datasets/regular")))
     
     # Output paths - project-specific directories
     trained_models_path = data_dir / "trained_models/regular"

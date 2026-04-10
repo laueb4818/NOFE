@@ -1,7 +1,7 @@
 {
     "mode": "subgraph",
+    "model_config_path": "ERA5/configurations/subgraph/model_configs/base.json",
     "dataset_id": "base",
-    "model_id": "base",
     "epochs": 20,
     "batch_size": 1,
     "learning_rate": 0.001,

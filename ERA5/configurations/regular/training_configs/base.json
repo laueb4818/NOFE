@@ -1,7 +1,8 @@
 {
     "mode": "regular",
+    "model_config_path": "ERA5/configurations/regular/model_configs/base.json",
     "dataset_id": "dataset1",
-    "model_id": "base",
+    "dataset_path": "ERA5/datasets/regular",
     "epochs": 20,
     "learning_rate": 0.0001,
     "scheduler_step": 4,

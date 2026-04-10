@@ -1,7 +1,8 @@
 {
     "mode": "regular",
+    "model_config_path": "alphaEarth/configurations/regular/model_configs/base.json",
     "dataset_id": "base",
-    "model_id": "base",
+    "dataset_path": "alphaEarth/datasets/regular",
     "epochs": 20,
     "learning_rate": 0.00001,
     "scheduler_step": 4,

@@ -109,6 +109,12 @@ def main(config_id): #regular method
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
             writer.append(graph.cpu())
         print()
+
+    # Save config alongside dataset
+    config_save_path = config["dataset_save_path"]
+    with open(f'{config_save_path}/{config_id}_config.json', 'w') as f:
+        json.dump(config, f, indent=4)
+
     # --- Print execution times --- #
     print("\nTiming summary:")
 

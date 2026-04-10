@@ -20,10 +20,9 @@ CLI Arguments:
 Config File Structure:
     {
         "model_id": "model_1",
-        "model_config_path": "../ERA5/configurations/regular/model_configs/model_1.json",
+        "model_config_path": "ERA5/configurations/regular/model_configs/model_1.json",
         "dataset_id": "dataset_1",
-        "dataset_config_path": "../ERA5/configurations/regular/dataset_configs/dataset_1.json",
-        "dataset_path": "../ERA5/datasets/regular",
+        "dataset_path": "ERA5/datasets/regular",
         "learning_rate": 0.001,
         "scheduler_step": 10,
         "scheduler_gamma": 0.5,
@@ -33,6 +32,9 @@ Config File Structure:
         "track_gradients": false,
         "checkpoint_every": 5
     }
+    
+    Note: The dataset config is automatically loaded from {dataset_path}/{dataset_id}_config.json
+    which is created during dataset generation.
 """
 
 import sys
@@ -129,11 +131,16 @@ class BaseTrainer(ABC):
         
         project_root = config_path.parent.parent.parent
         model_config_path = self._resolve_path(self.config['model_config_path'], base_dir=project_root)
-        dataset_config_path = self._resolve_path(self.config['dataset_config_path'], base_dir=project_root)
+        
+        # Derive model_id from model_config_path filename
+        model_id = model_config_path.stem
+        
         dataset_path = self._resolve_path(self.config['dataset_path'], base_dir=project_root)
         dataset_id = self.config['dataset_id']
         
-        trained_models_path = dataset_path.parent / "trained_models"
+        dataset_config_path = dataset_path / f"{dataset_id}_config.json"
+        
+        trained_models_path = dataset_path.parent.parent / "trained_models"
         training_logs_path = trained_models_path / "logs"
         
         trained_models_path.mkdir(parents=True, exist_ok=True)
@@ -150,7 +157,7 @@ class BaseTrainer(ABC):
             dataset_dict = json.load(f)
         
         time_string = strftime("%Y-%m-%d_t%H-%M-%S", localtime())
-        self.model_id = f"{self.config['model_id']}-{time_string}"
+        self.model_id = f"{model_id}-{time_string}"
         
         self.network_dict = {**self.config, **model_dict, **dataset_dict}
         
@@ -281,8 +288,8 @@ class BaseTrainer(ABC):
             config = json.load(f)
         
         required_fields = [
-            'model_id', 'model_config_path', 'dataset_id', 
-            'dataset_config_path', 'dataset_path', 'learning_rate',
+            'model_config_path', 'dataset_id', 
+            'dataset_path', 'learning_rate',
             'scheduler_step', 'scheduler_gamma', 'epochs'
         ]
         missing = [f for f in required_fields if f not in config]
