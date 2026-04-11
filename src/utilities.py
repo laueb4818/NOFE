@@ -355,8 +355,8 @@ def get_output_affinities_global_norm(output, edges, num_mc_samples=4096, eps=1e
 
     return q
 
-
-get_output_affinities = get_output_affinities_global_norm # EITHER get_output_affinities_local_norm OR get_output_affinities_global_norm
+# === IMPORTANT: USE LOCAL NORMALIZATION!!! global normalization leads to exploding gradients and unstable training
+get_output_affinities = get_output_affinities_local_norm # EITHER get_output_affinities_local_norm OR get_output_affinities_global_norm
 
 
 def custom_KL_loss(affinities_in, affinities_out, eps=1e-6):

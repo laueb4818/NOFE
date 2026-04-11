@@ -314,6 +314,41 @@ class Graph_Generator:
         
         return torch.tensor(sigmas, dtype=torch.float32)
 
+
+    @track_time
+    def optimize_sigma_local_variance(self, values: torch.Tensor, neighbor_indices: torch.Tensor) -> torch.Tensor:
+        """
+        Compute sigma (bandwidth) for each point based on local feature variance.
+        
+        sigma represents the typical spread of feature values among domain-space neighbors.
+        Regions with high local variance (heterogeneous) get larger sigma (differences tolerated),
+        regions with low local variance (homogeneous) get smaller sigma (differences penalized).
+        
+        Args:
+            values: FloatTensor of shape (N, F) with node features
+            neighbor_indices: LongTensor of shape (N, k) with indices of k domain-space neighbors
+            
+        Returns:
+            sigmas: FloatTensor of shape (N,) with per-point sigma values
+        """
+        N, F = values.shape
+        
+        # Get neighbor features: (N, k, F)
+        neighbor_values = values[neighbor_indices]
+        
+        # Compute mean of neighbors per feature: (N, F)
+        neighbor_mean = neighbor_values.mean(dim=1)
+        
+        # Compute squared Euclidean distance to neighbor mean: (N,)
+        diff = values - neighbor_mean
+        variance = torch.sum(diff ** 2, dim=1)
+        
+        # sigma = sqrt(variance)
+        sigmas = torch.sqrt(variance + self.eps)
+        
+        return sigmas
+
+
 #TODO: does not work properly:
     def optimize_sigma_gpu(self, distances: torch.Tensor, perplexity: float,
         tol=1e-5, max_iter=50) -> torch.Tensor:
@@ -438,7 +473,8 @@ class Graph_Generator:
         if perplexity is not None and perplexity != 0:
             feature_distances = self.feature_distances(indices=idx_tab_p, values=normed_values)
             meta['feature_distances'] = feature_distances
-            sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
+            sigmas = self.optimize_sigma_local_variance(values=normed_values, neighbor_indices=idx_tab_p)
+            #sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
             sigmas = sigmas.to(device=device)
             input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
         else:
