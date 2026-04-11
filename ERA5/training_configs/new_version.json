@@ -9,5 +9,5 @@
     "random_seed": 42,
     "use_gradient_clipping": false,
     "track_gradients": false,
-    "checkpoint_every": 2
+    "checkpoint_every": 5
 }
