@@ -80,6 +80,7 @@ def main(config_id): #regular method
     k=config['k']
     perplexity=config['perplexity']
     sampling_method=config['sampling_method']
+    sigma_method=config['sigma_method']
     
     # Train Set
     print('\nGenerate Training Set\n')
@@ -112,7 +113,7 @@ def main(config_id): #regular method
         
         for n in range(config["train_samples_per_file"]):
             print(f'{folder}: {n+1}/{config["train_samples_per_file"]}', end='\r')
-            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
     
@@ -127,7 +128,7 @@ def main(config_id): #regular method
         
         for n in range(config["test_samples_per_file"]):
             print(f'{folder}: {n+1}/{config["test_samples_per_file"]}', end='\r')
-            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
 

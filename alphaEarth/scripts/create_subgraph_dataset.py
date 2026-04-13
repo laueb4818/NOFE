@@ -101,7 +101,7 @@ def main(config_id): #regular method
         return()
     
     
-    # Train Set
+    sigma_method = config['sigma_method']
     print('\nGenerate Training Set\n')
     
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
@@ -116,16 +116,16 @@ def main(config_id): #regular method
         
         # create once beofre loop if output gaph is regular -> more efficient
         if config['output_sampling_method'] == "regular_subset":
-            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
         
         for n in range(config["train_samples_per_year"]):   
             # if output graph is not reused, it has to be created inside the loop
             if config['output_sampling_method'] != "regular_subset":
-                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             
             out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["train_samples_per_year"]}', end='\r')
-            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())
@@ -140,16 +140,16 @@ def main(config_id): #regular method
         Generator.load_data(bbox=config["bbox"], filename="sat_emb_"+str(year)+".tif")
         
         if config['output_sampling_method'] == "regular_subset":
-            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
         
         for n in range(config["test_samples_per_year"]):
             # if output graph is not reused, it has to be created inside the loop
             if config['output_sampling_method'] != "regular_subset":
-                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+                out_graph = Generator.sample_graph(N=config["N_out"], k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             
             out_graph = out_graph.to(device)
             print(f'{year}: {n+1}/{config["test_samples_per_year"]}', end='\r')
-            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=config["N_in"], k=config["k_in"], perplexity=None, sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())

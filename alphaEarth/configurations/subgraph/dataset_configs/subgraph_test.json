@@ -15,5 +15,6 @@
     "train_samples_per_year": 50,
     "test_samples_per_year": 10,
     "feature_mode": "channel_and_position",
-    "interpolate_graph_features": true
+    "interpolate_graph_features": true,
+    "sigma_method": "variance"
 }

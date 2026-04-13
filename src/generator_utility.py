@@ -445,7 +445,7 @@ class Graph_Generator:
         
         return p #input affinities
 
-
+    """
     def sample_graph(self, N:int=None, k:int=None, perplexity:int=None, sampling_method:str="random", gen_feature_mode:str="channel_only"):
         normed_values, normed_coords, meta = self.generate_normed_sample(N=N, method=sampling_method)
 
@@ -472,6 +472,43 @@ class Graph_Generator:
                 input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
             else:
                 input_affinities, sigmas = None, None
+
+        edge_attributes = self.get_edge_attributes(source_coords=normed_coords,
+                            target_coords=normed_coords,
+                            edge_indices=edge_indices,
+                            edge_dist=edge_dist,
+                            k=k,
+                            include_feat_diff=False)
+
+        return Data(x=node_features, edge_index=edge_indices, edge_attr=edge_attributes, edge_dist=edge_dist, input_affinities=input_affinities, sigmas=sigmas, normed_coords=normed_coords, normed_values=normed_values, meta=meta)
+    """
+
+    def sample_graph(self, N:int=None, k:int=None, perplexity:int=None, sampling_method:str="random", gen_feature_mode:str="channel_only", sigma_method:str="variance"):
+        normed_values, normed_coords, meta = self.generate_normed_sample(N=N, method=sampling_method)
+
+        edge_indices, edge_dist, idx_tab_p = self.get_edges(source=normed_coords, target=normed_coords, k=k, perplexity=perplexity, mode="self_search")
+
+        edge_indices = torch.as_tensor(edge_indices, device=device, dtype=torch.long)
+        edge_dist = torch.as_tensor(edge_dist, device=device, dtype=torch.float32)
+        idx_tab_p = torch.as_tensor(idx_tab_p, device=device, dtype=torch.long)
+        normed_coords = torch.tensor(normed_coords, device=device, dtype=torch.float32)
+        
+        normed_values = torch.as_tensor(normed_values, device=device, dtype=torch.float32)
+        node_features = self.get_node_features(normed_coords=normed_coords, normed_values=normed_values, mode=gen_feature_mode)
+
+        feature_distances = self.feature_distances(indices=idx_tab_p, values=normed_values)
+        meta['feature_distances'] = feature_distances
+        if sigma_method=="variance":
+            sigmas = self.optimize_sigma_local_variance(values=normed_values, neighbor_indices=idx_tab_p)
+        elif sigma_method=="perplexity":
+            sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
+        elif sigma_method=="ones":
+            sigmas = torch.ones_like(node_features[:,0])
+        else:
+            sigmas=None
+            print('invalid sigma_method')
+        sigmas = sigmas.to(device=device)
+        input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
 
         edge_attributes = self.get_edge_attributes(source_coords=normed_coords,
                             target_coords=normed_coords,

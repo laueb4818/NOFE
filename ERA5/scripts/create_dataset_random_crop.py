@@ -80,6 +80,7 @@ def main(config_id): #regular method
     k=config['k']
     perplexity=config['perplexity']
     sampling_method=config['sampling_method']
+    sigma_method=config['sigma_method']
     
     #bbox = config['lon_min'], config['lat_min'], config['lon_max'], config['lat_max']
     train_dates= pd.date_range(config["train_date_start_end"][0], config["train_date_start_end"][1]).strftime("%Y-%m-%d").tolist()
@@ -104,7 +105,7 @@ def main(config_id): #regular method
             Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
             
             print(f'{date}: {n+1}/{config["train_samples_per_date"]}', end='\r')
-            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
     
@@ -125,7 +126,7 @@ def main(config_id): #regular method
             Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
             
             print(f'{date}: {n+1}/{config["test_samples_per_date"]}', end='\r')
-            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
+            graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
 

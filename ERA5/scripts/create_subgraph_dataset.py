@@ -58,6 +58,7 @@ def main(config_id): #regular method
     bbox = config['lon_min'], config['lat_min'], config['lon_max'], config['lat_max']
     train_dates= pd.date_range(config["train_date_start_end"][0], config["train_date_start_end"][1]).strftime("%Y-%m-%d").tolist()
     test_dates= pd.date_range(config["test_date_start_end"][0], config["test_date_start_end"][1]).strftime("%Y-%m-%d").tolist()
+    sigma_method = config['sigma_method']
     
     # Train Set
     print('\nGenerate Training Set\n')
@@ -77,17 +78,17 @@ def main(config_id): #regular method
         # create once before loop if output graph is regular -> more efficient
         if config['output_sampling_method'] == "regular_subset":
             N_out = random.randint(N_out_min, N_out_max)
-            out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
         for n in range(config["train_samples_per_date"]):
             
             # if output graph is not reused, it has to be created inside the loop
             if config['output_sampling_method'] != "regular_subset":
                 N_out = random.randint(N_out_min, N_out_max)
-                out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+                out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             
             print(f'{date}: {n+1}/{config["train_samples_per_date"]}', end='\r')
             N_in = random.randint(N_in_min, N_in_max)
-            in_graph = Generator.sample_graph(N=N_in, k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=N_in, k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph)
@@ -109,17 +110,17 @@ def main(config_id): #regular method
         # create once before loop if output graph is regular -> more efficient
         if config['output_sampling_method'] == "regular_subset":
             N_out = random.randint(N_out_min, N_out_max)
-            out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+            out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
         for n in range(config["test_samples_per_date"]):
             
             # if output graph is not reused, it has to be created inside the loop
             if config['output_sampling_method'] != "regular_subset":
                 N_out = random.randint(N_out_min, N_out_max)
-                out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"])
+                out_graph = Generator.sample_graph(N=N_out, k=config["k_out"], perplexity=config["perplexity"], sampling_method=config["output_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             
             print(f'{date}: {n+1}/{config["test_samples_per_date"]}', end='\r')
             N_in = random.randint(N_in_min, N_in_max)
-            in_graph = Generator.sample_graph(N=N_in, k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"])
+            in_graph = Generator.sample_graph(N=N_in, k=config["k_in"], perplexity=config["perplexity"], sampling_method=config["input_sampling_method"], gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             cross_graph = Generator.connect_graphs(in_graph=in_graph, out_graph=out_graph, k_cross=config["k_cross"])
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph)

@@ -10,5 +10,6 @@
     "test_years": [2023],
     "train_samples_per_year": 10,
     "test_samples_per_year": 10,
-    "feature_mode": "channel_and_position"
+    "feature_mode": "channel_and_position",
+    "sigma_method": "variance"
 }

@@ -13,5 +13,6 @@
     "train_samples_per_date": 50,
     "test_samples_per_date": 5,
     "feature_mode": "channel_only",
+    "sigma_method": "variance",
     "vars": ["w", "v", "z", "q", "r", "t", "d", "o3", "pv", "u", "vo"]
 }

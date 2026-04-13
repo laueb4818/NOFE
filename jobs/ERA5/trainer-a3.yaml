@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage/NOFE-general/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/reg_large_woPos"] # 
+        args: ["python train_standard.py ERA5/reg_large_crop_woPos"] # 
         #stdin: true
         #tty: true
         env:
