@@ -140,7 +140,7 @@ class BaseTrainer(ABC):
         
         dataset_config_path = dataset_path / f"{dataset_id}_config.json"
         
-        mode = self.config.get('mode', 'regular')
+        mode = dataset_path.name
         trained_models_path = dataset_path.parent.parent / "trained_models" / mode
         training_logs_path = trained_models_path / "logs"
         

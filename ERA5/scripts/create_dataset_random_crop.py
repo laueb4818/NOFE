@@ -75,7 +75,8 @@ def main(config_id): #regular method
         print('dataset already exists -- STOP')
         return()
     
-    #N=config['N']
+    N_min=config['N_min']
+    N_max=config['N_max']
     k=config['k']
     perplexity=config['perplexity']
     sampling_method=config['sampling_method']
@@ -94,7 +95,7 @@ def main(config_id): #regular method
         
         for n in range(config["train_samples_per_date"]):
             
-            N = max(int(random.gauss(config['N'], 100)), config['N_std'])
+            N = random.randint(N_min, N_max)
             lat_min = random.uniform(-90, 70)
             lat_max = random.uniform(lat_min+10, 90)
             lon_min = random.uniform(-180, 160)
@@ -113,9 +114,16 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for date in test_dates:
-        Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
         
         for n in range(config["test_samples_per_date"]):
+            N = random.randint(N_min, N_max)
+            lat_min = random.uniform(-90, 70)
+            lat_max = random.uniform(lat_min+10, 90)
+            lon_min = random.uniform(-180, 160)
+            lon_max = random.uniform(lon_min+10, 180)
+            bbox = lon_min, lat_min, lon_max, lat_max
+            Generator.load_data(bbox=bbox, vars=config['vars'], filename=f"{date}.nc")
+            
             print(f'{date}: {n+1}/{config["test_samples_per_date"]}', end='\r')
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"])
             writer.append(graph)

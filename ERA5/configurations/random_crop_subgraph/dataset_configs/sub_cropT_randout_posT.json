@@ -1,0 +1,21 @@
+{
+    "data_folder_path": "../data/",
+    "dataset_save_path": "../datasets/random_crop_subgraph/",
+    "k_in": 5,
+    "k_out": 5,
+    "k_cross": 5,
+    "perplexity": 20,
+    "N_in_min": 2000,
+    "N_in_max": 8000,
+    "N_out_min": 2000,
+    "N_out_max": 10000,
+    "input_sampling_method": "random",
+    "output_sampling_method": "random",
+    "train_date_start_end": ["2018-01-01", "2018-01-31"],
+    "test_date_start_end": ["2018-02-01", "2018-02-10"],
+    "train_samples_per_date": 50,
+    "test_samples_per_date": 5,
+    "feature_mode": "channel_and_position",
+    "interpolate_graph_features": true,
+    "vars": ["w", "v", "z", "q", "r", "t", "d", "o3", "pv", "u", "vo"]
+}

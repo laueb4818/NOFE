@@ -22,7 +22,8 @@ from dataset_utilities import (
 from generator_utility import (
     Graph_Generator,
     track_time,
-    _function_timings
+    _function_timings,
+    device
 )
 
 
@@ -252,7 +253,7 @@ class ERA5_Graph_Generator(Graph_Generator):
             indices2 = np.tile(lon_inds_subset, n_lat_new) # repeats full array 'n_lat_new' times 
             
             indices = np.vstack([indices1,indices2]).T
-        
+
         else:
             print(f'"{method}" is an invalid sample method!')
         
@@ -270,3 +271,74 @@ class ERA5_Graph_Generator(Graph_Generator):
         normed_coords = self.norm_coords(raw_coords)
         
         return normed_values, normed_coords, meta
+
+
+    def synthetic_graph(self, N:int, k:int, gen_feature_mode:str="channel_only"):
+        """
+        Create a synthetic output graph with regular grid positions and dummy features.
+        Used for inference with arbitrary grid resolutions.
+        
+        :param N: number of nodes in the output graph
+        :type N: int
+        :param k: number of nearest neighbors for edge creation
+        :type k: int
+        :param gen_feature_mode: determines node features - 'channel_only', 'position_only', 'channel_and_position'
+        :type gen_feature_mode: str
+        """
+        n_channels, n_lat, n_lon = self.da.shape
+        
+        aspect = n_lat / n_lon
+        n_lat_new = int(round(np.sqrt(N * aspect)))
+        n_lon_new = int(round(N / n_lat_new))
+        
+        lat_vals = np.linspace(self.grid_latitudes[0], self.grid_latitudes[-1], n_lat_new)
+        lon_vals = np.linspace(self.grid_longitudes[0], self.grid_longitudes[-1], n_lon_new)
+        
+        latitudes = np.repeat(lat_vals, n_lon_new)
+        longitudes = np.tile(lon_vals, n_lat_new)
+        
+        raw_coords = self.cartesian_projection(lat=latitudes, lon=longitudes)
+        normed_coords = self.norm_coords(raw_coords)
+
+        normed_coords = torch.as_tensor(normed_coords, device=device, dtype=torch.float32)
+        dummy_features = torch.zeros(len(latitudes), n_channels, device=device, dtype=torch.float32)
+        
+        meta = Data(gps=np.column_stack((latitudes, longitudes)), synthetic=True)
+        
+        edge_indices, edge_dist, _ = self.get_edges(
+            source=normed_coords.cpu().numpy(), 
+            target=normed_coords.cpu().numpy(), 
+            k=k, 
+            perplexity=0, 
+            mode="self_search"
+        )
+        
+        edge_indices = torch.as_tensor(edge_indices, device=device, dtype=torch.long)
+        edge_dist = torch.as_tensor(edge_dist, device=device, dtype=torch.float32)
+        
+        node_features = self.get_node_features(
+            normed_coords=normed_coords, 
+            normed_values=dummy_features, 
+            mode=gen_feature_mode
+        )
+        
+        edge_attributes = self.get_edge_attributes(
+            source_coords=normed_coords,
+            target_coords=normed_coords,
+            edge_indices=edge_indices,
+            edge_dist=edge_dist,
+            k=k,
+            include_feat_diff=False
+        )
+        
+        return Data(
+            x=node_features, 
+            edge_index=edge_indices, 
+            edge_attr=edge_attributes, 
+            edge_dist=edge_dist, 
+            input_affinities=None, 
+            sigmas=None, 
+            normed_coords=normed_coords, 
+            normed_values=dummy_features, 
+            meta=meta
+        )

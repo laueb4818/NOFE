@@ -1,13 +1,13 @@
 {
-    "model_config_path": "ERA5/configurations/random_crop_subgraph/model_configs/base2.json",
-    "dataset_id": "base",
-    "dataset_path": "ERA5/datasets/random_crop_subgraph",
+    "model_config_path": "ERA5/configurations/random_crop/model_configs/base.json",
+    "dataset_id": "dataset1",
+    "dataset_path": "ERA5/datasets/random_crop",
     "learning_rate": 0.00001,
     "scheduler_step": 5,
     "scheduler_gamma": 0.9,
     "epochs": 1000,
     "random_seed": 42,
-    "use_gradient_clipping": true,
+    "use_gradient_clipping": false,
     "track_gradients": true,
     "checkpoint_every": 5
 }
