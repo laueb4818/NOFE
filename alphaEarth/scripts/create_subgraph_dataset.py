@@ -71,7 +71,8 @@ from utilities_alphaEarth import (
     AlphaEarth_Graph_Generator,
     GraphLMDBWriter,
     track_time,
-    _function_timings
+    _function_timings,
+    clear_memory_cache
 )
 
 
@@ -130,6 +131,7 @@ def main(config_id): #regular method
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())
         print()
+        clear_memory_cache()
     
     # Test Set
     print('\nGenerate Test Set\n')
@@ -154,7 +156,8 @@ def main(config_id): #regular method
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph.cpu())
         print()
-    
+        clear_memory_cache()
+
     # Save config alongside dataset
     config_save_path = config["dataset_save_path"]
     with open(f'{config_save_path}/{config_id}_config.json', 'w') as f:

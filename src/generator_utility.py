@@ -23,6 +23,13 @@ import time
 import functools
 from collections import defaultdict
 
+def clear_memory_cache():
+    """Clear GPU memory cache. Works with CUDA, MPS, and CPU."""
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    elif torch.backends.mps.is_available():
+        torch.mps.empty_cache()
+
 # shared registry
 _function_timings = defaultdict(lambda: {"total": 0.0, "calls": 0})
 

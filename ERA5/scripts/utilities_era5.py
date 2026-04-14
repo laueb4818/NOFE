@@ -23,7 +23,8 @@ from generator_utility import (
     Graph_Generator,
     track_time,
     _function_timings,
-    device
+    device,
+    clear_memory_cache
 )
 
 

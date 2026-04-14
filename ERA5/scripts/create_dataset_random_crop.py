@@ -49,7 +49,7 @@ from dataset_utilities import (
     #GraphLMDBReader,
 )
 
-from utilities_era5 import ERA5_Graph_Generator
+from utilities_era5 import ERA5_Graph_Generator, clear_memory_cache
 
 
 
@@ -108,6 +108,7 @@ def main(config_id): #regular method
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
+        clear_memory_cache()
     
     # Test Set
     print('\nGenerate Test Set\n')
@@ -129,6 +130,7 @@ def main(config_id): #regular method
             graph = Generator.sample_graph(N=N, k=k, perplexity=perplexity, sampling_method=sampling_method, gen_feature_mode=config["feature_mode"], sigma_method=sigma_method)
             writer.append(graph)
         print()
+        clear_memory_cache()
 
     # Save config alongside dataset
     config_save_path = config["dataset_save_path"]

@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-create-dataset-era5-rand-subgraph
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage/NOFE-general/ERA5/scripts/
+        workingDir: /storage3/NOFE-general/ERA5/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_dataset_random_crop_subgraph.py base --debug-checks"]
         #stdin: true
@@ -33,6 +33,8 @@ spec:
           mountPath: /storage
         - name: storage2
           mountPath: /storage2
+        - name: storage3
+          mountPath: /storage3
       volumes:
         - name: storage
           persistentVolumeClaim:
@@ -40,6 +42,9 @@ spec:
         - name: storage2
           persistentVolumeClaim:
             claimName: storage2
+        - name: storage3
+          persistentVolumeClaim:
+            claimName: storage3
       restartPolicy: OnFailure
   backoffLimit: 0
 

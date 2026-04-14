@@ -47,7 +47,7 @@ from dataset_utilities import (
     GraphLMDBWriter,
 )
 
-from utilities_era5 import ERA5_Graph_Generator
+from utilities_era5 import ERA5_Graph_Generator, clear_memory_cache
 
 
 config_id = sys.argv[1]
@@ -121,6 +121,7 @@ def main(config_id):
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph)
         print()
+        clear_memory_cache()
     
     # Test Set
     print('\nGenerate Test Set\n')
@@ -141,6 +142,7 @@ def main(config_id):
             cross_graph.cross["x"] = Generator.construct_output_node_features(cross_graph=cross_graph, interpolate=config["interpolate_graph_features"], gen_feature_mode=config["feature_mode"])
             writer.append(cross_graph)
         print()
+        clear_memory_cache()
 
     # Save config alongside dataset
     config_save_path = config["dataset_save_path"]
