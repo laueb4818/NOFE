@@ -1,0 +1,13 @@
+{
+    "model_config_path": "ERA5/configurations/regular/model_configs/testmodel4_w8_kw128_d6.json",
+    "dataset_id": "toyset_reg_fixcrop_var_woPos",
+    "dataset_path": "ERA5/datasets/regular",
+    "learning_rate": 0.00005,
+    "scheduler_step": 5,
+    "scheduler_gamma": 0.9,
+    "epochs": 100,
+    "random_seed": 42,
+    "use_gradient_clipping": true,
+    "track_gradients": true,
+    "checkpoint_every": 5
+}
