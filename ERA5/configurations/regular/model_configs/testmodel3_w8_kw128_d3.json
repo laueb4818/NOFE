@@ -1,0 +1,8 @@
+{
+    "width": 8,
+    "ker_width": 128,
+    "depth": 3,
+    "node_features": 11,
+    "edge_attr": 7,
+    "out_width": 3
+}

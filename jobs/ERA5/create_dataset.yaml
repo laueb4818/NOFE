@@ -11,15 +11,15 @@ spec:
         value: "high"
         effect: "NoSchedule"
       nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-3090"  
+        springfield.uit.no/gpu-type: "gtx-1080-ti"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
       - name: nofe-create-dataset-era5-2
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/ERA5/scripts/
+        workingDir: /storage3/NOFE/ERA5/scripts/
         command: ["/bin/bash", "-c"]
-        args: ["python create_dataset.py base"]
+        args: ["python create_dataset.py reg_woPos_sigma1_2018"]
         #stdin: true
         #tty: true
         env:

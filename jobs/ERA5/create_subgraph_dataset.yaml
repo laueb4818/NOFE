@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-subgraph-create-dataset-era5
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/ERA5/scripts/
+        workingDir: /storage3/NOFE/ERA5/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_subgraph_dataset.py base"]
         #stdin: true

@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-create-dataset-dmri
         image: "laueb4818/neural-operators-new3:dMRI"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/dMRI/scripts/
+        workingDir: /storage3/NOFE/dMRI/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_dataset.py base_many"]
         #stdin: true

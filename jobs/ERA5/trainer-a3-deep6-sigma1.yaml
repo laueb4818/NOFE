@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-era5-regular-crop-a3-deep6-sigmaone
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/src
+        workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
         args: ["python train_standard.py ERA5/reg_medium_crop_woPos_deep6_sigma1"] # 
         #stdin: true

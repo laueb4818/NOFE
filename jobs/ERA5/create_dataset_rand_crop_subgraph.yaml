@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-create-dataset-era5-rand-subgraph
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/ERA5/scripts/
+        workingDir: /storage3/NOFE/ERA5/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_dataset_random_crop_subgraph.py base --debug-checks"]
         #stdin: true

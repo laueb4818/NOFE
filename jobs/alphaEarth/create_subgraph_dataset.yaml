@@ -17,7 +17,7 @@ spec:
       containers:
       - name: nofe-create-subgraph-dataset-alphaearth
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
-        workingDir: /storage3/NOFE-general/alphaEarth/scripts/
+        workingDir: /storage3/NOFE/alphaEarth/scripts/
         command: ["/bin/bash", "-c"]
         args: ["python create_subgraph_dataset.py subgraph_base"]
         #stdin: true
