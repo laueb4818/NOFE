@@ -135,6 +135,9 @@ class BaseTrainer(ABC):
         # Derive model_id from model_config_path filename
         model_id = model_config_path.stem
         
+        # Capture training config name for use in save name
+        training_config_name = config_path.stem
+        
         dataset_path = self._resolve_path(self.config['dataset_path'], base_dir=project_root)
         dataset_id = self.config['dataset_id']
         
@@ -158,7 +161,7 @@ class BaseTrainer(ABC):
             dataset_dict = json.load(f)
         
         time_string = strftime("%Y-%m-%d_t%H-%M-%S", localtime())
-        self.model_id = f"{model_id}-{mode}-{time_string}"
+        self.model_id = f"{training_config_name}_{time_string}"
         
         self.network_dict = {**self.config, **model_dict, **dataset_dict}
         

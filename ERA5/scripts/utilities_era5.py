@@ -28,6 +28,9 @@ from generator_utility import (
 )
 
 
+EARTH_RADIUS_M = 6_371_000  # Earth's mean radius in meters; used for global ECEF coordinate normalization
+
+
 #%%
 class ERA5_Graph_Generator(Graph_Generator):
     def __init__(self, *args, **kwargs):
@@ -169,36 +172,50 @@ class ERA5_Graph_Generator(Graph_Generator):
     
     def norm_coords(self, cartesian):
         """
-        We norm the 3-dim. cartesian coordinates such that the values are [-1, 1].
-        The scale of the 3 dimensions w.r.t each other remains the same.
-        This is accomplished by subtracting their individual center values, but dividing by a common denominator
-        
-        requires subregion to be loaded 'self.load_subregion()'
-        
-        returns np.ndarray of shape (N,3)
+        Global ECEF coordinate normalization.
+
+        Normalizes cartesian (ECEF) coordinates to approximately [-1, 1] in each
+        dimension by dividing by sqrt(3) * EARTH_RADIUS_M. The center of Earth
+        (0, 0, 0) is used as the reference, providing a consistent global frame
+        of reference across all samples.
         """
-        bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
-        bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
-        bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
-        bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
-        
-        bounds = np.vstack(([bound_1, bound_2, bound_3, bound_4]))
-        
-        x_min, y_min, z_min = np.min(bounds, axis=0)
-        x_max, y_max, z_max = np.max(bounds,axis=0)
-        
-        x_center = (x_max + x_min) / 2
-        y_center = (y_max + y_min) / 2
-        z_center = (z_max + z_min) / 2
-        
-        denominator = np.sqrt(3) * np.sqrt( (x_max-x_min)**2 + (y_max-y_min)**2 + (z_max-z_min)**2 )
-                
-        normed_coords = cartesian
-        normed_coords[:,0] = (normed_coords[:,0] - x_center) / denominator
-        normed_coords[:,1] = (normed_coords[:,1] - y_center) / denominator
-        normed_coords[:,2] = (normed_coords[:,2] - z_center) / denominator
-        
-        return normed_coords
+        return cartesian / (np.sqrt(3) * EARTH_RADIUS_M)
+
+    # --- PREVIOUS IMPLEMENTATION (per-sample per-bbox normalization) ---
+    # Kept for reference; can be reverted if needed.
+    #
+    # def norm_coords(self, cartesian):
+    #     """
+    #     We norm the 3-dim. cartesian coordinates such that the values are [-1, 1].
+    #     The scale of the 3 dimensions w.r.t each other remains the same.
+    #     This is accomplished by subtracting their individual center values, but dividing by a common denominator
+    #
+    #     requires subregion to be loaded 'self.load_subregion()'
+    #
+    #     returns np.ndarray of shape (N,3)
+    #     """
+    #     bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
+    #     bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
+    #     bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
+    #     bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
+    #
+    #     bounds = np.vstack(([bound_1, bound_2, bound_3, bound_4]))
+    #
+    #     x_min, y_min, z_min = np.min(bounds, axis=0)
+    #     x_max, y_max, z_max = np.max(bounds,axis=0)
+    #
+    #     x_center = (x_max + x_min) / 2
+    #     y_center = (y_max + y_min) / 2
+    #     z_center = (z_max + z_min) / 2
+    #
+    #     denominator = np.sqrt(3) * np.sqrt( (x_max-x_min)**2 + (y_max-y_min)**2 + (z_max-z_min)**2 )
+    #
+    #     normed_coords = cartesian
+    #     normed_coords[:,0] = (normed_coords[:,0] - x_center) / denominator
+    #     normed_coords[:,1] = (normed_coords[:,1] - y_center) / denominator
+    #     normed_coords[:,2] = (normed_coords[:,2] - z_center) / denominator
+    #
+    #     return normed_coords
     
 
     @track_time
@@ -343,3 +360,45 @@ class ERA5_Graph_Generator(Graph_Generator):
             normed_values=dummy_features, 
             meta=meta
         )
+
+
+class ERA5_Graph_Generator_perSampleNorm(ERA5_Graph_Generator):
+    """
+    ERA5_Graph_Generator variant that uses per-sample per-bbox coordinate normalization
+    instead of the global ECEF normalization.
+
+    Kept as a separate class for easy comparison and reverting.
+    See ERA5_Graph_Generator.norm_coords() for the global version.
+    """
+
+    def norm_coords(self, cartesian):
+        """
+        Per-sample per-bbox coordinate normalization.
+
+        Normalizes cartesian coordinates to approximately [-1, 1] by centering
+        on the bounding box of the loaded sample and scaling by its diagonal.
+
+        requires subregion to be loaded via load_data()
+        """
+        bound_1 = self.cartesian_projection(np.min(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_2 = self.cartesian_projection(np.min(self.grid_latitudes), np.max(self.grid_longitudes))
+        bound_3 = self.cartesian_projection(np.max(self.grid_latitudes), np.min(self.grid_longitudes))
+        bound_4 = self.cartesian_projection(np.max(self.grid_latitudes), np.max(self.grid_longitudes))
+
+        bounds = np.vstack(([bound_1, bound_2, bound_3, bound_4]))
+
+        x_min, y_min, z_min = np.min(bounds, axis=0)
+        x_max, y_max, z_max = np.max(bounds, axis=0)
+
+        x_center = (x_max + x_min) / 2
+        y_center = (y_max + y_min) / 2
+        z_center = (z_max + z_min) / 2
+
+        denominator = np.sqrt(3) * np.sqrt((x_max - x_min)**2 + (y_max - y_min)**2 + (z_max - z_min)**2)
+
+        normed_coords = cartesian.copy()
+        normed_coords[:, 0] = (normed_coords[:, 0] - x_center) / denominator
+        normed_coords[:, 1] = (normed_coords[:, 1] - y_center) / denominator
+        normed_coords[:, 2] = (normed_coords[:, 2] - z_center) / denominator
+
+        return normed_coords
