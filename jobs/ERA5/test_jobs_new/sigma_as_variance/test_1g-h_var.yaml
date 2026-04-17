@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-era5-test-1h
+  name: nofe-era5-test-1gh
 spec:
   template:
     spec:
@@ -10,13 +10,18 @@ spec:
         operator: "Equal"
         value: "high"
         effect: "NoSchedule"
+      #nodeSelector:
+      #  springfield.uit.no/gpu-type: "rtx-A6000"  
+      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-era5-test-1h 
-        image: "laueb4818/neural-operators-new3:latest"
+      - name: nofe-era5-test-1gh 
+        image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/test1_model8"]
+        args: ["python train_standard.py ERA5/test1b_model7_new && python train_standard.py ERA5/test1b_model8_new"] # 
+        #stdin: true
+        #tty: true
         env:
         - name: WANDB_API_KEY
           valueFrom:
@@ -42,3 +47,7 @@ spec:
             claimName: storage3
       restartPolicy: OnFailure
   backoffLimit: 0
+
+
+
+

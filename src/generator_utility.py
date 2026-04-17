@@ -355,6 +355,30 @@ class Graph_Generator:
         
         return sigmas
 
+    @track_time
+    def optimize_sigma_global_median(self, k: int, feature_distances: torch.Tensor) -> torch.Tensor:
+        """
+        Compute a single global sigma as the median of all feature distances
+        between each node and its k nearest neighbors.
+
+        The median reflects the typical feature separation distance between
+        spatially connected nodes. A single shared sigma is used for all nodes,
+        making this a principled, data-driven, and computationally cheap method.
+
+        Args:
+            k: number of nearest neighbors used for graph connectivity
+            feature_distances: FloatTensor of shape (N, p) with feature distances
+                              to neighbors (p >= k). Uses only the first k columns.
+
+        Returns:
+            sigmas: FloatTensor of shape (N,) with a single global sigma value
+                    repeated for all nodes.
+        """
+        k_distances = feature_distances[:, :k]
+        global_median = torch.median(k_distances.flatten())
+        sigmas = torch.full((k_distances.shape[0],), global_median.item())
+        return sigmas
+
 
 #TODO: does not work properly:
     def optimize_sigma_gpu(self, distances: torch.Tensor, perplexity: float,
@@ -511,6 +535,8 @@ class Graph_Generator:
             sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
         elif sigma_method=="ones":
             sigmas = torch.ones_like(node_features[:,0])
+        elif sigma_method=="global_median":
+            sigmas = self.optimize_sigma_global_median(k=k, feature_distances=feature_distances)
         else:
             sigmas=None
             print('invalid sigma_method')

@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-era5-test-1d
+  name: nofe-era5-test-subgraph3
 spec:
   template:
     spec:
@@ -12,11 +12,11 @@ spec:
         effect: "NoSchedule"
       hostIPC: true
       containers:
-      - name: nofe-era5-test-1d 
+      - name: nofe-era5-test-subgraph3
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/test1_model4"]
+        args: ["python train_subgraph ERA5/subgraph_fixcrop_median_testmodel3 --wandb"] # 
         env:
         - name: WANDB_API_KEY
           valueFrom:
@@ -42,3 +42,5 @@ spec:
             claimName: storage3
       restartPolicy: OnFailure
   backoffLimit: 0
+
+

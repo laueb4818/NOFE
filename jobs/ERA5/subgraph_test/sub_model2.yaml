@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-era5-test-1a
+  name: nofe-era5-test-subgraph2
 spec:
   template:
     spec:
@@ -10,18 +10,13 @@ spec:
         operator: "Equal"
         value: "high"
         effect: "NoSchedule"
-      #nodeSelector:
-        #springfield.uit.no/gpu-type: "rtx-3090"  
-      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-era5-test-1a 
-        image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
+      - name: nofe-era5-test-subgraph2
+        image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/test1_model1"] # 
-        #stdin: true
-        #tty: true
+        args: ["python train_subgraph ERA5/subgraph_fixcrop_median_testmodel2 --wandb"] # 
         env:
         - name: WANDB_API_KEY
           valueFrom:
@@ -47,7 +42,4 @@ spec:
             claimName: storage3
       restartPolicy: OnFailure
   backoffLimit: 0
-
-
-
 
