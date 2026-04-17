@@ -16,7 +16,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_subgraph ERA5/subgraph_fixcrop_median_testmodel3 --wandb"] # 
+        args: ["python train_subgraph.py ERA5/subgraph_fixcrop_median_testmodel3 --wandb"] # 
         env:
         - name: WANDB_API_KEY
           valueFrom:

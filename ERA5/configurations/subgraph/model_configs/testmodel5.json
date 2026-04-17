@@ -1,0 +1,11 @@
+{
+    "width": 64,
+    "ker_width": 256,
+    "depth": 3,
+    "input_node_features": 11,
+    "output_node_features": 11,
+    "edge_attr": 7,
+    "out_width": 3
+}
+
+
