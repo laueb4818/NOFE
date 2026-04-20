@@ -618,7 +618,12 @@ class Graph_Generator:
         else:
             constructed_features=self.get_node_features(normed_coords=normed_coords_target, mode=gen_feature_mode)
         
-        return constructed_features.to(torch.float32)
+        constructed_features = constructed_features.to(torch.float32)
+        
+        cross_graph.target.meta['x_true'] = cross_graph.target.x.clone()
+        cross_graph.target.x = constructed_features
+        
+        return constructed_features
     
     
     @track_time
