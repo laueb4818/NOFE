@@ -216,6 +216,60 @@ def rgb(res, scatter=False, figsize=(10, 10), resolution=500):
 
 
 
+# same but scalar plot
+def scalar_plot(res, column, scatter=False, figsize=(10, 10), resolution=500):
+    values = res[column].values.astype(float)
+
+    projection = ccrs.PlateCarree()
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw={'projection': projection})
+
+    ax.set_extent(
+        [res['lon'].min(), res['lon'].max(),
+         res['lat'].min(), res['lat'].max()],
+        crs=ccrs.PlateCarree()
+    )
+
+    ax.coastlines()
+    ax.add_feature(cfeature.BORDERS, linestyle=':')
+
+    if scatter:
+        sc = ax.scatter(
+            res['lon'], res['lat'],
+            c=values,              # ← raw values
+            cmap='viridis',
+            s=5,
+            transform=ccrs.PlateCarree()
+        )
+    else:
+        lon_grid = np.linspace(res['lon'].min(), res['lon'].max(), resolution)
+        lat_grid = np.linspace(res['lat'].min(), res['lat'].max(), resolution)
+        lon_grid, lat_grid = np.meshgrid(lon_grid, lat_grid)
+
+        grid = griddata(
+            (res['lon'], res['lat']),
+            values,               # ← raw values
+            (lon_grid, lat_grid),
+            method='cubic'
+        )
+
+        im = ax.imshow(
+            grid,
+            extent=(res['lon'].min(), res['lon'].max(),
+                    res['lat'].min(), res['lat'].max()),
+            origin='lower',
+            cmap='viridis',
+            transform=ccrs.PlateCarree(),
+            interpolation='bilinear'
+        )
+
+    # Colorbar reflects actual data values
+    plt.colorbar(im if not scatter else sc, ax=ax, label=column)
+
+    return fig
+
+
+
+
 
 def scale_channels_with_percentile(res, rgb_channels, percentile=5):
     res[rgb_channels] = res[rgb_channels].apply(

@@ -23,6 +23,8 @@ import time
 import functools
 from collections import defaultdict
 
+from utilities import get_output_affinities
+
 def clear_memory_cache():
     """Clear GPU memory cache. Works with CUDA, MPS, and CPU."""
     if torch.cuda.is_available():
@@ -456,7 +458,7 @@ class Graph_Generator:
         # Get node embeddings for source and target
         x_i = normed_values[edge_indices[0, :]]  # [E, D]
         x_j = normed_values[edge_indices[1, :]]  # [E, D]
-        sigma_i = sigmas[edge_indices[0, :]]  # [E]
+        sigma_i = sigmas[edge_indices[0, :]]  # [E] 
         
         # Compute squared distances
         sqdist = torch.sum((x_i - x_j) ** 2, dim=1)
@@ -529,19 +531,21 @@ class Graph_Generator:
 
         feature_distances = self.feature_distances(indices=idx_tab_p, values=normed_values)
         meta['feature_distances'] = feature_distances
-        if sigma_method=="variance":
-            sigmas = self.optimize_sigma_local_variance(values=normed_values, neighbor_indices=idx_tab_p)
-        elif sigma_method=="perplexity":
-            sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
-        elif sigma_method=="ones":
-            sigmas = torch.ones_like(node_features[:,0])
-        elif sigma_method=="global_median":
-            sigmas = self.optimize_sigma_global_median(k=k, feature_distances=feature_distances)
-        else:
-            sigmas=None
-            print('invalid sigma_method')
-        sigmas = sigmas.to(device=device)
-        input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
+#        if sigma_method=="variance":
+#            sigmas = self.optimize_sigma_local_variance(values=normed_values, neighbor_indices=idx_tab_p)
+#        elif sigma_method=="perplexity":
+#            sigmas = self.optimize_sigma(distances=feature_distances, perplexity=perplexity)
+#        elif sigma_method=="ones":
+#            sigmas = torch.ones_like(node_features[:,0])
+#        elif sigma_method=="global_median":
+#            sigmas = self.optimize_sigma_global_median(k=k, feature_distances=feature_distances)
+#        else:
+#            sigmas=None
+#            print('invalid sigma_method')
+#        sigmas = sigmas.to(device=device)
+#        input_affinities = self.get_affinities(normed_values=normed_values, edge_indices=edge_indices, sigmas=sigmas)
+        sigmas = None
+        input_affinities = get_output_affinities(normed_values, edge_indices)
 
         edge_attributes = self.get_edge_attributes(source_coords=normed_coords,
                             target_coords=normed_coords,
