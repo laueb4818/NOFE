@@ -1,0 +1,15 @@
+{
+    "model_config_path": "ERA5/configurations/regular/model_configs/testmodel1_w8_kw32_d3_wPos.json",
+    "dataset_id": "dataset_reg_fixcrop_median_wPos_tkernel",
+    "dataset_path": "ERA5/datasets/regular",
+    "learning_rate": 0.00001,
+    "scheduler_step": 5,
+    "scheduler_gamma": 0.9,
+    "epochs": 100,
+    "random_seed": 42,
+    "use_gradient_clipping": true,
+    "track_gradients": true,
+    "checkpoint_every": 5
+}
+
+
