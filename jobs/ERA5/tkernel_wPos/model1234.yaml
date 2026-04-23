@@ -8,11 +8,11 @@ spec:
       tolerations:
       - key: "vram"
         operator: "Equal"
-        value: "high"
-      #nodeSelector:
-        #springfield.uit.no/gpu-type: "rtx-A6000"  
-      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
+        value: "high" 
         effect: "NoSchedule"
+      nodeSelector:
+        springfield.uit.no/gpu-type: "rtx-A6000"  
+      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000
       hostIPC: true
       containers:
       - name: nofe-era5-model5-tkernel-1234
