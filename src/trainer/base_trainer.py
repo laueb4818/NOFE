@@ -240,7 +240,7 @@ class BaseTrainer(ABC):
         print(f"Model: {self.model.__class__.__name__}")
         print(f"  Parameters: {sum(p.numel() for p in self.model.parameters())}\n")
         
-        self.optimizer = torch.optim.Adam(
+        self.optimizer = torch.optim.AdamW(
             self.model.parameters(), lr=learning_rate, weight_decay=5e-4
         )
         self.scheduler = torch.optim.lr_scheduler.StepLR(
