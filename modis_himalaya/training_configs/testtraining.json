@@ -1,0 +1,13 @@
+{
+    "mode": "regular",
+    "model_config_path": "modis_himalaya/configurations/regular/model_configs/testmodel.json",
+    "dataset_id": "regular_test",
+    "dataset_path": "modis_himalaya/datasets/regular/",
+    "epochs": 20,
+    "learning_rate": 0.0001,
+    "scheduler_step": 4,
+    "scheduler_gamma": 0.8
+}
+
+
+

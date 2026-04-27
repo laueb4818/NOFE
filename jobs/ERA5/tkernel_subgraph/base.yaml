@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-era5-tkernel-subgraph-base-d3
+  name: nofe-era5-tkernel-subgraph-base-d3-noclipping
 spec:
   template:
     spec:
@@ -9,13 +9,13 @@ spec:
       - key: "vram"
         operator: "Equal"
         value: "high"
-      #nodeSelector:
-        #springfield.uit.no/gpu-type: "rtx-A6000"  
-      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
         effect: "NoSchedule"
+      nodeSelector:
+        springfield.uit.no/gpu-type: "rtx-A6000"  
+      #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-era5-tkernel-subgraph-base-d3
+      - name: nofe-era5-tkernel-subgraph-base-d3-noclipping
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]

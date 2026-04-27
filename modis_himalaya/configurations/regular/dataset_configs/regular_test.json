@@ -1,0 +1,19 @@
+{
+    "data_folder_path": "../data/himalaya/",
+    "dataset_save_path": "../datasets/regular/",
+    "bbox": [1000, 1500, 1500, 2500],
+    "N_min": 500,
+    "N_max": 5000,
+    "k": 10,
+    "perplexity": 10,
+    "sampling_method": "random",
+    "feature_mode": "channel_only",
+    "sigma_method": "tkernel",
+    "min_file_size_mb": 150,
+    "train_samples_per_timestamp": 10,
+    "test_samples_per_timestamp": 5,
+    "train_min_date": "2018-05-01",
+    "train_max_date": "2018-05-30",
+    "test_min_date": "2018-06-01",
+    "test_max_date": "2018-06-30"
+}
