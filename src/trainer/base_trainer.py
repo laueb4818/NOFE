@@ -55,8 +55,6 @@ from src.utilities import (
     setup_device,
 )
 
-WARMUP_BATCHES = 300  # Set to 0 to disable warmup
-
 
 def set_seed(seed=42):
     """Set random seeds for reproducibility."""
@@ -248,14 +246,7 @@ class BaseTrainer(ABC):
         self.scheduler = torch.optim.lr_scheduler.StepLR(
             self.optimizer, step_size=scheduler_step, gamma=scheduler_gamma
         )
-
-        # === WARMUP (remove block to disable) ===
-        if WARMUP_BATCHES > 0:
-            for param_group in self.optimizer.param_groups:
-                param_group['original_lr'] = param_group['lr']
-                param_group['lr'] = param_group['lr'] * 0.01
-        # ===
-
+        
         self._train_loop(epochs, trained_models_path, training_logs_path, 
                          use_gradient_clipping, track_gradients, checkpoint_every)
         
@@ -407,18 +398,6 @@ class BaseTrainer(ABC):
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
                 
                 self.optimizer.step()
-
-                # === WARMUP ===
-                if WARMUP_BATCHES > 0:
-                    batch_idx = ep * len(self.train_indices) + i
-                    if batch_idx < WARMUP_BATCHES:
-                        factor = max(0.01, (batch_idx + 1) / WARMUP_BATCHES)
-                        for param_group in self.optimizer.param_groups:
-                            param_group['lr'] = param_group['original_lr'] * factor
-                    elif batch_idx == WARMUP_BATCHES:
-                        for param_group in self.optimizer.param_groups:
-                            param_group['lr'] = param_group['original_lr']
-                # ===
             
             avg_loss = np.mean(all_losses) + 1e-8
             loss_record.append(avg_loss)
