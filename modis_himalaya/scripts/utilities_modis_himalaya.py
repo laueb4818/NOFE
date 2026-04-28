@@ -88,7 +88,7 @@ class MODIS_Himalaya_Graph_Generator(Graph_Generator):
         return sorted_timestamps
 
 
-@track_time
+    @track_time
     def load_data(self, timestamp:str=None, bbox:tuple=None):
         bright_file = f'brighttemp_1KM_grid_modis_{timestamp}.tif'
         refl_file = f'reflectance_1KM_grid_modis_{timestamp}.tif'
