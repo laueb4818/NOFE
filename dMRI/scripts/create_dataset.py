@@ -109,7 +109,9 @@ def main(config_id): #regular method
     
     for folder in train_folders:
         path = config['data_folder_path']+folder+"/T1w/Diffusion/"
-        Generator.load_data(path = path)
+        if not Generator.load_data(path = path):
+            print(f'Skipping folder {folder} for training set')
+            continue
         
         for n in range(config["train_samples_per_file"]):
             print(f'{folder}: {n+1}/{config["train_samples_per_file"]}', end='\r')
@@ -125,7 +127,9 @@ def main(config_id): #regular method
     
     for folder in test_folders:
         path = config['data_folder_path']+folder+"/T1w/Diffusion/"
-        Generator.load_data(path=path)
+        if not Generator.load_data(path=path):
+            print(f'Skipping folder {folder} for test set')
+            continue
         
         for n in range(config["test_samples_per_file"]):
             print(f'{folder}: {n+1}/{config["test_samples_per_file"]}', end='\r')

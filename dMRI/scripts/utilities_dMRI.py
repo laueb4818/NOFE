@@ -39,8 +39,20 @@ class dMRI_Graph_Generator(Graph_Generator):
         bvecs = np.loadtxt(path + "bvecs")
         gtab = gradient_table(bvals, bvecs=bvecs)
         
-        # Create a brain mask: voxels with nonzero signal in any direction
-        mask = np.any(data != 0, axis=-1)  # shape: (X,Y,Z)
+        # Validate b0 volume presence to avoid NaN in normalization
+        num_b0_volumes = gtab.b0s_mask.sum()
+        if num_b0_volumes == 0:
+            print("\n" + "="*80)
+            print(f"WARNING: SKIPPING SUBJECT")
+            print(f"Path: {path}")
+            print(f"Reason: No b0 volumes found (all bvals >= 50 s/mm²)")
+            print(f"bvals: {bvals}")
+            print("="*80 + "\n")
+            return False
+        
+        # Load brain mask from file
+        mask_img = nib.load(path + "nodif_brain_mask.nii.gz")
+        mask = mask_img.get_fdata().astype(bool)  # shape: (X,Y,Z)
         
         # Voxel coordinates
         X, Y, Z = mask.shape
@@ -74,6 +86,7 @@ class dMRI_Graph_Generator(Graph_Generator):
         self.da = x_norm
         self.normed_coords = pos
         self.meta = meta
+        return True
     
     
     @track_time
