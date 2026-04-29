@@ -99,7 +99,7 @@ def main(config_id):
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
     
     for timestamp in train_timestamps:
-        Generator.load_data(timestamp=timestamp)
+        Generator.load_data(timestamp=timestamp, bbox=bbox)
         
         for n in range(config["train_samples_per_timestamp"]):
             print(f'{timestamp}: {n+1}/{config["train_samples_per_timestamp"]}', end='\r')
@@ -110,8 +110,7 @@ def main(config_id):
                 perplexity=perplexity, 
                 sampling_method=sampling_method, 
                 gen_feature_mode=config["feature_mode"],
-                sigma_method=sigma_method,
-                bbox=bbox
+                sigma_method=sigma_method
             )
             writer.append(graph)
         print()
@@ -123,7 +122,7 @@ def main(config_id):
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for timestamp in test_timestamps:
-        Generator.load_data(timestamp=timestamp)
+        Generator.load_data(timestamp=timestamp, bbox=bbox)
         
         for n in range(config["test_samples_per_timestamp"]):
             print(f'{timestamp}: {n+1}/{config["test_samples_per_timestamp"]}', end='\r')
@@ -134,8 +133,7 @@ def main(config_id):
                 perplexity=perplexity, 
                 sampling_method=sampling_method, 
                 gen_feature_mode=config["feature_mode"],
-                sigma_method=sigma_method,
-                bbox=bbox
+                sigma_method=sigma_method
             )
             writer.append(graph)
         print()
