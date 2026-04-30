@@ -4,7 +4,6 @@ import torch
 from rasterio.windows import from_bounds
 import numpy as np
 from pyproj import Transformer
-import faiss
 from torch_geometric.data import Data
 from torch_scatter import scatter
 
@@ -103,11 +102,17 @@ class Graph_Generator:
             NN = max(k, N_per+1)
 
 
-        
-        N, D = source.shape
-        index = faiss.IndexFlatL2(D)  # L2 distance index (Euclidean)
-        index.add(source)
-        distance_tab, indices_tab = index.search(target, NN) 
+        # Faiss conflict, use sklearn NearestNeighbors instead for now. 
+        from sklearn.neighbors import NearestNeighbors
+        if isinstance(source, torch.Tensor):
+            source = source.detach().cpu().numpy()
+        if isinstance(target, torch.Tensor):
+            target = target.detach().cpu().numpy()
+        source = source.astype('float32')
+        target = target.astype('float32')
+        nbrs = NearestNeighbors(n_neighbors=NN, algorithm='auto', metric='euclidean').fit(source)
+        distance_tab, indices_tab = nbrs.kneighbors(target)
+        distance_tab = distance_tab ** 2  # match faiss squared L2 distances
 
 
         # get long table of edge indices and edge distances

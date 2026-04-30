@@ -1,0 +1,14 @@
+{
+    "mode": "regular",
+    "model_config_path": "regular/model_configs/large.json",
+    "dataset_id": "large_many",
+    "dataset_path": "../datasets/regular",
+    "epochs": 300,
+    "learning_rate": 0.0005,
+    "scheduler_step": 10,
+    "scheduler_gamma": 0.95,
+    "random_seed": 42,
+    "use_gradient_clipping": true,
+    "track_gradients": false,
+    "checkpoint_every": 10
+}

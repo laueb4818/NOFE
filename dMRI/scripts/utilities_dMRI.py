@@ -29,6 +29,13 @@ class dMRI_Graph_Generator(Graph_Generator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)    
     
+    def load_segmentation(self, path:str):
+        """Load aparc+aseg parcellation and store brain-masked label array."""
+        seg_img = nib.load(path + "aparc+aseg.nii.gz")
+        seg = seg_img.get_fdata().astype(np.int32)
+        mask = self.meta.mask.numpy()          # full flat mask (X*Y*Z,)
+        self.seg_labels = seg.reshape(-1)[mask] # brain-only labels (N_brain,)
+
     def load_data(self, path:str, brain_only=True):
         
         dwi_img = nib.load(path + "data.nii.gz")
@@ -37,10 +44,11 @@ class dMRI_Graph_Generator(Graph_Generator):
         # get measurement parameters
         bvals = np.loadtxt(path + "bvals")
         bvecs = np.loadtxt(path + "bvecs")
-        gtab = gradient_table(bvals, bvecs=bvecs)
+        gtab = gradient_table(bvals, bvecs=bvecs, b0_threshold=100)
         
-        # Create a brain mask: voxels with nonzero signal in any direction
-        mask = np.any(data != 0, axis=-1)  # shape: (X,Y,Z)
+        # Load brain mask from file
+        mask_img = nib.load(path + "nodif_brain_mask.nii.gz")
+        mask = mask_img.get_fdata().astype(bool)  # shape: (X,Y,Z)
         
         # Voxel coordinates
         X, Y, Z = mask.shape
@@ -108,13 +116,39 @@ class dMRI_Graph_Generator(Graph_Generator):
             indices = random.sample(range(N_total), N)
             # Convert to tensor to avoid CUDA indexing errors
             indices = torch.tensor(indices, dtype=torch.long)
-        
+
+        elif method=="region_stratified":
+            # Equal sampling from each coordinate-based brain lobe.
+            # Ensures all regions are represented regardless of their volume.
+            y = self.normed_coords[:, 1].numpy()
+            z = self.normed_coords[:, 2].numpy()
+            lobe_masks = {
+                'frontal':     y > 0.60,
+                'parietal':    (y > 0.35) & (y < 0.85) & (z > 0.62),
+                'temporal':    (y > 0.20) & (y < 0.70) & (z < 0.55),
+                'occipital':   y < 0.25,
+                'subcortical': (y > 0.35) & (y < 0.65) & (z > 0.28) & (z < 0.58),
+            }
+            n_regions  = len(lobe_masks)
+            per_region = N // n_regions
+            remainder  = N % n_regions
+            all_indices = []
+            for i, (_, mask) in enumerate(lobe_masks.items()):
+                pool     = np.where(mask)[0]
+                n_sample = per_region + (1 if i < remainder else 0)
+                if len(pool) == 0:
+                    continue
+                chosen = pool if len(pool) <= n_sample else \
+                         np.random.choice(pool, size=n_sample, replace=False)
+                all_indices.append(chosen)
+            indices = torch.tensor(np.concatenate(all_indices), dtype=torch.long)
+
         elif method=="interpolate":
             pass
-        
+
         elif method=="regular_subset":
             pass
-        
+
         else:
             print(f'"{method}" is an invalid sample method!')
         
@@ -123,6 +157,7 @@ class dMRI_Graph_Generator(Graph_Generator):
         normed_values = self.da[indices, :].detach().clone()
         normed_coords = self.normed_coords[indices, :].detach().clone()
         meta = self.meta.detach().clone()
-        
+        self.last_indices = indices  # expose for region-based embedding extraction
+
         return normed_values, normed_coords, meta
 

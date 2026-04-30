@@ -24,8 +24,10 @@ Examples:
 """
 
 
-import sys
 import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+import sys
 import json
 import torch
 import pandas as pd
@@ -37,7 +39,8 @@ if torch.cuda.is_available():
     device = torch.device("cuda")
 elif torch.backends.mps.is_available():
     device = torch.device("mps")
-    os.chdir("/Volumes/T7-storage/NOFE/dMRI/scripts/" )
+    # os.chdir("/Volumes/T7-storage/NOFE/dMRI/scripts/" )
+    os.chdir("/Users/siche9897/Github/NOFE/dMRI/scripts/" )
 else:
     device = torch.device("cpu")
 print(f'using Device: {device}')
@@ -108,7 +111,8 @@ def main(config_id): #regular method
     print(f'Remaining for tests:\n{remaining_folders}\n')
     
     for folder in train_folders:
-        path = config['data_folder_path']+folder+"/T1w/Diffusion/"
+        # path = config['data_folder_path']+folder+"/T1w/Diffusion/"
+        path = config['data_folder_path']+folder+"/T1w/Diffusion_7T/"
         Generator.load_data(path = path)
         
         for n in range(config["train_samples_per_file"]):
@@ -124,7 +128,8 @@ def main(config_id): #regular method
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for folder in test_folders:
-        path = config['data_folder_path']+folder+"/T1w/Diffusion/"
+        # path = config['data_folder_path']+folder+"/T1w/Diffusion/"
+        path = config['data_folder_path']+folder+"/T1w/Diffusion_7T/"
         Generator.load_data(path=path)
         
         for n in range(config["test_samples_per_file"]):

@@ -18,7 +18,6 @@ from typing import Dict, Any, Tuple
 import numpy as np
 import pandas as pd
 import torch
-import faiss
 import lmdb
 from pyproj import Transformer
 from torch_geometric.data import Data
@@ -109,7 +108,7 @@ def caresian_projection(df, altitude=5500):
 
 def knn_faiss(X, k=100):
     """
-    KNN using faiss with L2 (Euclidean) distance.
+    KNN using L2 (Euclidean) distance.
 
     Args:
         X (np.ndarray or torch.Tensor): Input data of shape [N, D]
@@ -119,18 +118,15 @@ def knn_faiss(X, k=100):
         distances: [N, k] array of distances to neighbors
         indices: [N, k] array of indices of neighbors
     """
+    from sklearn.neighbors import NearestNeighbors
     if isinstance(X, torch.Tensor):
         X = X.detach().cpu().numpy()
     X = X.astype('float32')
 
-    N, D = X.shape
-    index = faiss.IndexFlatL2(D)  # L2 distance index (Euclidean)
-    index.add(X)
+    nbrs = NearestNeighbors(n_neighbors=k + 1, algorithm='auto', metric='euclidean').fit(X)
+    distances, indices = nbrs.kneighbors(X)
 
-    # Search for k+1 neighbors to exclude the point itself
-    distances, indices = index.search(X, k + 1)
-
-    # Exclude self-match
+    # Exclude self-match (first neighbor is always the point itself)
     distances = distances[:, 1:]
     indices = indices[:, 1:]
 
@@ -160,40 +156,35 @@ def get_edge_indices(df, indices, undirected=False):
 
 def cross_knn_faiss(X, Y, k):
     """
-    Find k nearest neighbors from X for each point in Y using faiss.
-    
+    Find k nearest neighbors from X for each point in Y.
+
     Args:
         X (np.ndarray or torch.Tensor): Source points [N, D]
         Y (np.ndarray or torch.Tensor): Query points [M, D]
         k (int): Number of neighbors to find
-        
+
     Returns:
         edge_index: [2, M*k] tensor where [0,:] are Y indices and [1,:] are X indices
     """
+    from sklearn.neighbors import NearestNeighbors
     if isinstance(X, torch.Tensor):
         X = X.detach().cpu().numpy()
     if isinstance(Y, torch.Tensor):
         Y = Y.detach().cpu().numpy()
-    
+
     X = X.astype('float32')
     Y = Y.astype('float32')
-    
-    N_x, D = X.shape
+
     N_y = Y.shape[0]
-    
-    # Build index on source points (X)
-    index = faiss.IndexFlatL2(D)
-    index.add(X)
-    
-    # Query for k nearest neighbors from X for each point in Y
-    distances, indices = index.search(Y, k)
-    
-    # Build edge index: [0,:] = Y indices (repeated), [1,:] = X indices (neighbors)
+
+    nbrs = NearestNeighbors(n_neighbors=k, algorithm='auto', metric='euclidean').fit(X)
+    distances, indices = nbrs.kneighbors(Y)
+
     y_indices = np.repeat(np.arange(N_y), k)
     x_indices = indices.flatten()
-    
+
     edge_index = torch.from_numpy(np.stack([y_indices, x_indices], axis=0)).long()
-    
+
     return edge_index
 
 

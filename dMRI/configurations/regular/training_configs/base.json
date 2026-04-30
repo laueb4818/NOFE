@@ -1,8 +1,8 @@
 {
     "mode": "regular",
-    "model_config_path": "dMRI/configurations/regular/model_configs/base.json",
+    "model_config_path": "regular/model_configs/base.json",
     "dataset_id": "base_many",
-    "dataset_path": "dMRI/datasets/regular",
+    "dataset_path": "../datasets/regular",
     "epochs": 100,
     "learning_rate": 0.0005,
     "scheduler_step": 5,

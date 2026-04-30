@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /Users/siche9897/Github/NOFE && python - <<'PY'\nimport json\nfrom pathlib import Path\nimport ast\npath = Path\\('dMRI/notebooks/rsa_brain_region_cognitive_scores\\.ipynb'\\)\nnb = json\\.loads\\(path\\.read_text\\(\\)\\)\nerrors = \\[\\]\nfor idx, cell in enumerate\\(nb\\['cells'\\]\\):\n    if cell\\['cell_type'\\] == 'code':\n        src = ''\\.join\\(cell\\['source'\\]\\)\n        try:\n            ast\\.parse\\(src\\)\n        except SyntaxError as e:\n            errors\\.append\\(\\(idx, e\\.lineno, e\\.offset, e\\.text\\)\\)\nfor err in errors:\n    print\\('SYNTAX ERROR in cell', err\\[0\\], 'line', err\\[1\\], 'offset', err\\[2\\]\\)\n    print\\(err\\[3\\]\\)\nif not errors:\n    print\\('No syntax errors detected in code cells\\.'\\)\nPY$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
