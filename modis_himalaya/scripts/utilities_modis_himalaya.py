@@ -6,6 +6,7 @@ import pandas as pd
 import json
 import torch
 import rasterio
+import rasterio.errors
 from rasterio.windows import Window
 from torch_geometric.data import Data
 from torch_scatter import scatter
@@ -97,68 +98,79 @@ class MODIS_Himalaya_Graph_Generator(Graph_Generator):
         refl_path = os.path.join(self.directory, refl_file)
         
         if not os.path.exists(bright_path):
-            raise FileNotFoundError(f"Brightness file not found: {bright_path}")
+            print(f"WARNING: Brightness file not found, skipping: {bright_path}")
+            return False
         if not os.path.exists(refl_path):
-            raise FileNotFoundError(f"Reflectance file not found: {refl_path}")
+            print(f"WARNING: Reflectance file not found, skipping: {refl_path}")
+            return False
         
-        self.meta = Data(
-            source_file_bright=os.path.abspath(bright_path),
-            source_file_refl=os.path.abspath(refl_path),
-            timestamp=timestamp
-        )
-        
-        with rasterio.open(bright_path) as src_bright:
-            bright = src_bright.read()
-        
-        with rasterio.open(refl_path) as src_refl:
-            refl = src_refl.read()
-        
-        combined = np.concatenate([bright, refl], axis=0)
-        
-        for c in range(combined.shape[0]):
-            channel = combined[c]
-            mean = np.nanmean(channel)
-            std = np.nanstd(channel)
-            if std == 0:
-                std = 1
-            combined[c] = (channel - mean) / (std + 1e-8)
-        
-        rows, cols = combined.shape[1], combined.shape[2]
-        
-        if bbox is not None:
-            row_min, col_min, row_max, col_max = bbox
-            row_min = max(0, row_min)
-            col_min = max(0, col_min)
-            row_max = min(rows, row_max)
-            col_max = min(cols, col_max)
-            self.da = combined[:, row_min:row_max, col_min:col_max]
-            self.crop_offset = (row_min, col_min)
-        else:
-            self.da = combined
-            self.crop_offset = (0, 0)
-        
-        rows, cols = self.da.shape[1], self.da.shape[2]
-        self.grid_row_indices = np.arange(rows)
-        self.grid_col_indices = np.arange(cols)
-        
-        transform = src_bright.transform
-        self.transform = transform
-        self.crs = src_bright.crs
-        
-        to_wgs84 = Transformer.from_crs(self.crs, 'EPSG:4326', always_xy=True)
-        
-        rows_grid, cols_grid = np.meshgrid(
-            np.arange(rows) + 0.5,
-            np.arange(cols) + 0.5,
-            indexing='ij'
-        )
-        
-        xs_utm, ys_utm = transform * (cols_grid, rows_grid)
-        
-        lons, lats = to_wgs84.transform(xs_utm, ys_utm)
-        
-        self.grid_longitudes = lons[0, :]
-        self.grid_latitudes = lats[:, 0]
+        try:
+            self.meta = Data(
+                source_file_bright=os.path.abspath(bright_path),
+                source_file_refl=os.path.abspath(refl_path),
+                timestamp=timestamp
+            )
+            
+            with rasterio.open(bright_path) as src_bright:
+                bright = src_bright.read()
+            
+            with rasterio.open(refl_path) as src_refl:
+                refl = src_refl.read()
+            
+            combined = np.concatenate([bright, refl], axis=0)
+            
+            for c in range(combined.shape[0]):
+                channel = combined[c]
+                mean = np.nanmean(channel)
+                std = np.nanstd(channel)
+                if std == 0:
+                    std = 1
+                combined[c] = (channel - mean) / (std + 1e-8)
+            
+            rows, cols = combined.shape[1], combined.shape[2]
+            
+            if bbox is not None:
+                row_min, col_min, row_max, col_max = bbox
+                row_min = max(0, row_min)
+                col_min = max(0, col_min)
+                row_max = min(rows, row_max)
+                col_max = min(cols, col_max)
+                self.da = combined[:, row_min:row_max, col_min:col_max]
+                self.crop_offset = (row_min, col_min)
+            else:
+                self.da = combined
+                self.crop_offset = (0, 0)
+            
+            rows, cols = self.da.shape[1], self.da.shape[2]
+            self.grid_row_indices = np.arange(rows)
+            self.grid_col_indices = np.arange(cols)
+            
+            transform = src_bright.transform
+            self.transform = transform
+            self.crs = src_bright.crs
+            
+            to_wgs84 = Transformer.from_crs(self.crs, 'EPSG:4326', always_xy=True)
+            
+            rows_grid, cols_grid = np.meshgrid(
+                np.arange(rows) + 0.5,
+                np.arange(cols) + 0.5,
+                indexing='ij'
+            )
+            
+            xs_utm, ys_utm = transform * (cols_grid, rows_grid)
+            
+            lons, lats = to_wgs84.transform(xs_utm, ys_utm)
+            
+            self.grid_longitudes = lons[0, :]
+            self.grid_latitudes = lats[:, 0]
+            return True
+            
+        except rasterio.errors.RasterioIOError as e:
+            print(f"WARNING: Failed to read file (possibly corrupt): {e}")
+            return False
+        except Exception as e:
+            print(f"WARNING: Unexpected error loading {timestamp}: {e}")
+            return False
 
 
     def norm_coords(self, indices):

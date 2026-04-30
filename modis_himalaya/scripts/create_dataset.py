@@ -99,7 +99,10 @@ def main(config_id):
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_train.lmdb')
     
     for timestamp in train_timestamps:
-        Generator.load_data(timestamp=timestamp, bbox=bbox)
+        success = Generator.load_data(timestamp=timestamp, bbox=bbox)
+        if not success:
+            print(f"Skipping timestamp due to load failure: {timestamp}")
+            continue
         
         for n in range(config["train_samples_per_timestamp"]):
             print(f'{timestamp}: {n+1}/{config["train_samples_per_timestamp"]}', end='\r')
@@ -122,7 +125,10 @@ def main(config_id):
     writer = GraphLMDBWriter(f'{config["dataset_save_path"]}/{config_id}_test.lmdb')
     
     for timestamp in test_timestamps:
-        Generator.load_data(timestamp=timestamp, bbox=bbox)
+        success = Generator.load_data(timestamp=timestamp, bbox=bbox)
+        if not success:
+            print(f"Skipping timestamp due to load failure: {timestamp}")
+            continue
         
         for n in range(config["test_samples_per_timestamp"]):
             print(f'{timestamp}: {n+1}/{config["test_samples_per_timestamp"]}', end='\r')
