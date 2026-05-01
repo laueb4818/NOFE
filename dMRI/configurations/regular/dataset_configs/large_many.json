@@ -1,7 +1,7 @@
 {
     "data_folder_path": "../data/",
     "dataset_save_path": "../datasets/regular/",
-    "N": 30000,
+    "N": 20000,
     "k": 10,
     "perplexity": 10,
     "sampling_method": "region_stratified",
