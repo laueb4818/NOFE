@@ -1,0 +1,14 @@
+{
+    "model_config_path": "ERA5/configurations/regular/model_configs/papermodel7.json",
+    "dataset_id": "dataset_reg_fixcrop_median_woPos_tkernel",
+    "dataset_path": "ERA5/datasets/regular",
+    "learning_rate": 0.00001,
+    "scheduler_step": 10,
+    "scheduler_gamma": 0.5,
+    "epochs": 25,
+    "random_seed": 42,
+    "use_gradient_clipping": false,
+    "track_gradients": true,
+    "checkpoint_every": 5
+}
+
