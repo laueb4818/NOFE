@@ -11,7 +11,7 @@ spec:
         value: "high"
         effect: "NoSchedule"
       nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-A6000"  
+        springfield.uit.no/gpu-type: "rtx-3090"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:

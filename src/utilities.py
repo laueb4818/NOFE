@@ -152,13 +152,16 @@ class KernelNN(nn.Module):
         ker_in,
         in_width=1,
         out_width=2,
+        lifting=True
     ):
         super(KernelNN, self).__init__()
         
         self.depth = depth
         self.out_width = out_width
+        self.lifting = lifting
         
-        self.fc1 = nn.Linear(in_width, width)
+        if self.lifting:
+            self.fc1 = nn.Linear(in_width, width)
         
         kernel = DenseNet([ker_in, ker_width, ker_width, width**2], nn.ReLU)
         self.conv1 = NNConv_old(width, width, kernel, aggr="mean")
@@ -167,12 +170,13 @@ class KernelNN(nn.Module):
     
     def forward(self, data):
         x, edge_index, edge_attr = data.x, data.edge_index, data.edge_attr
-        x = self.fc1(x)
+        if self.lifting:
+            x = self.fc1(x)
         for k in range(self.depth):
             x = F.relu(self.conv1(x, edge_index, edge_attr))
         
         x = self.fc2(x)
-        return x
+        return x 
 
 
 class KernelNN_subgraph(nn.Module):
