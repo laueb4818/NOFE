@@ -1,7 +1,7 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: nofe-era5-paper-lifting
+  name: nofe-era5-paper-nolifting
 spec:
   template:
     spec:
@@ -15,7 +15,7 @@ spec:
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
-      - name: nofe-era5-paper-lifting
+      - name: nofe-era5-paper-nolifting
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]

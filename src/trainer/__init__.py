@@ -14,5 +14,6 @@ Usage:
 from .base_trainer import BaseTrainer
 from .standard_trainer import StandardTrainer
 from .subgraph_trainer import SubgraphTrainer
+from .standard_trainer_nolifting import StandardTrainer_nolifting
 
 __all__ = ['BaseTrainer', 'StandardTrainer', 'SubgraphTrainer']
