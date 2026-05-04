@@ -11,7 +11,7 @@ spec:
         value: "high"
         effect: "NoSchedule"
       nodeSelector:
-        springfield.uit.no/gpu-type: "gtx-1080-ti"  
+        springfield.uit.no/gpu-type: "rtx-3090"  
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"  #"pytorch/pytorch:2.2.0-cuda12.1-cudnn8-runtime"
         workingDir: /storage3/NOFE/src/
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py modis_himalaya/base1"]
+        args: ["python train_standard.py modis_himalaya/testtraining2"]
         #stdin: true
         #tty: true
         env:

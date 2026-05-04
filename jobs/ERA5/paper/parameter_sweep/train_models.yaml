@@ -11,7 +11,7 @@ spec:
         value: "high"
         effect: "NoSchedule"
       nodeSelector:
-        springfield.uit.no/gpu-type: "rtx-3090"  
+        springfield.uit.no/gpu-type: "rtx-A6000"
       #gtx-1080-ti, rtx-2080-ti, rtx-3090, or rtx-A6000 
       hostIPC: true
       containers:
@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/regular_papermodel1 --wandb && python train_standard.py ERA5/regular_papermodel2 --wandb && python train_standard.py ERA5/regular_papermodel3 --wandb"] # 
+        args: ["python train_standard.py ERA5/regular_papermodel9 --wandb"] # 
         env:
         - name: WANDB_API_KEY
           valueFrom:

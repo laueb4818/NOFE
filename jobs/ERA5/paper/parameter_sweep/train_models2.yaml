@@ -19,7 +19,7 @@ spec:
         image: "laueb4818/neural-operators-new3:latest"
         workingDir: /storage3/NOFE/src
         command: ["/bin/bash", "-c"]
-        args: ["python train_standard.py ERA5/regular_papermodel4 --wandb && python train_standard.py ERA5/regular_papermodel5 --wandb && python train_standard.py ERA5/regular_papermodel6 --wandb"] # 
+        args: ["python train_standard.py ERA5/regular_papermodel10 --wandb"] # 
         env:
         - name: WANDB_API_KEY
           valueFrom:
