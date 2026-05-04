@@ -12,7 +12,7 @@ from src.utilities import (
 )
 
 
-class StandardTrainer(BaseTrainer):
+class StandardTrainer_nolifting(BaseTrainer):
     """Trainer for standard KernelNN models."""
     
     def __init__(
