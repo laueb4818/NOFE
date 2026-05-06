@@ -3,17 +3,6 @@
 This repository is the official implementation of **NOFE: Neural Operator Function Embedding** (paper link TBD).
 
 > NOFE learns function-to-function mappings via a Graph Kernel Operator, enabling mesh-free evaluation at arbitrary query locations independent of input discretization.
-## Applications
-
-| Domain | Dataset | Task |
-|--------|---------|------|
-| Weather / Climate | ERA5 (ECMWF) | Multi-variable atmospheric field estimation |
-| Brain Imaging | dMRI | Diffusion MRI fiber orientation prediction |
-| Satellite | MODIS Himalaya, alphaEarth | Geospatial variable estimation |
-| Medical Imaging | Liver | Anatomical field prediction |
-
----
-
 ## Requirements
 
 Install dependencies using conda (recommended):
@@ -219,13 +208,8 @@ If you use this code in your research, please cite:
 
 ---
 
-## License
-
-This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
-
----
 
 ## Acknowledgements
 
 - ERA5 data provided by the [Copernicus Climate Change Service](https://cds.climate.copernicus.eu/)
-
+- dMRI data provided by the [The Human Connectome Project](https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-young-adult-2025-release)
