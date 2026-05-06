@@ -76,21 +76,34 @@ python dMRI/scripts/create_dataset.py <config_name>
 
 Training supports three modes: `standard` (fixed region), `random_crop`, and `subgraph` (disjoint input/output graphs).
 
+The config argument format is `<project>/<config_name>`, which resolves automatically to `<project>/training_configs/<config_name>.json`. Do **not** include `training_configs/` in the argument.
+
+```
+# ERA5 training configs:  ERA5/training_configs/<config_name>.json  →  ERA5/<config_name>
+# dMRI training configs:  dMRI/training_configs/<config_name>.json  →  dMRI/<config_name>
+```
+
 ### Standard / Random Crop
 
 ```bash
 python src/train_standard.py \
-    --config ERA5/training_configs/<config_name> \
+    ERA5/<config_name> \
     [--wandb] \
     [--gradient-clipping] \
     [--checkpoint-every 5]
+```
+
+Examples:
+```bash
+python src/train_standard.py ERA5/regular_papermodel1
+python src/train_standard.py dMRI/base --wandb
 ```
 
 ### Subgraph Mode
 
 ```bash
 python src/train_subgraph.py \
-    --config ERA5/configurations/random_crop_subgraph/training_configs/base \
+    ERA5/<config_name> \
     [--wandb]
 ```
 
@@ -98,7 +111,7 @@ python src/train_subgraph.py \
 
 ```bash
 python src/train_standard_nolifting.py \
-    --config ERA5/training_configs/<config_name>
+    ERA5/<config_name>
 ```
 
 Training config parameters:
@@ -141,14 +154,7 @@ Key model hyperparameters (set in model config JSON):
 
 ## Evaluation
 
-Evaluation runs automatically at the end of each epoch during training. To evaluate a saved checkpoint:
-
-```bash
-python src/train_standard.py \
-    --config ERA5/training_configs/<config_name> \
-    --eval-only \
-    --checkpoint <path/to/checkpoint.pt>
-```
+Evaluation runs automatically at the end of each epoch during training. Validation loss is logged to the console (and to Weights & Biases when `--wandb` is passed).
 
 ---
 
