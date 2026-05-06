@@ -160,7 +160,7 @@ Pre-trained model checkpoints will be released upon paper acceptance.
 
 ## Results
 
-Results on ERA5 atmospheric field estimation (11 variables, test year 2019):
+Results and visualizations for each application can be found in the respective notebooks folders, for example [ERA5/notebooks/](ERA5/notebooks/) and [dMRI/notebooks/](dMRI/notebooks/).
 
 > Full results table will be added upon paper publication. See the paper for quantitative comparisons against baseline methods.
 
