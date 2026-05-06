@@ -23,13 +23,13 @@ ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip
 
 # Copy requirements and install dependencies
-COPY requirements2.txt .
+COPY requirements.txt .
 
 RUN pip install torch==2.2.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118
 
 RUN pip install torch-scatter -f https://data.pyg.org/whl/torch-2.2.0+cu118.html
 
-RUN pip install --no-cache-dir -r requirements2.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Install torch-geometric (cuda version)
 #RUN pip torch-geometric -f https://data.pyg.org/whl/torch-2.2.0+cu118.html

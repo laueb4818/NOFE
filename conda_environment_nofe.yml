@@ -495,4 +495,4 @@ dependencies:
       - xyzservices==2025.11.0
       - zencfg==0.6.0
       - zict==3.0.0
-prefix: /Users/laueb4818/miniforge3/envs/neural-operators-new
+prefix: /path/to/miniforge3/envs/neural-operators-new
