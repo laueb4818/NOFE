@@ -1,0 +1,27 @@
+# Data (never committed; see README "Data")
+**/data/
+**/data
+**/datasets/
+**/datasets
+
+# Run outputs
+**/trained_models/
+**/training_logs/
+**/wandb/
+**/save/
+*.npy
+*.pt
+*.pth
+*.pkl
+*.log
+*_buffer_*.csv
+
+# Python / notebook
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Editors / OS
+.DS_Store
+.vscode/
+.venv/

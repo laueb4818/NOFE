@@ -1,0 +1,11 @@
+{
+    "data_folder_path": "../../../dMRI/",
+    "dataset_save_path": "../datasets/regular/",
+    "N": 10000,
+    "k": 10,
+    "perplexity": 10,
+    "sampling_method": "random",
+    "train_samples_per_file": 50,
+    "test_samples_per_file": 20,
+    "feature_mode": "channel_only"
+}

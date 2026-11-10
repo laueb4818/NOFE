@@ -1,0 +1,15 @@
+{
+    "model_config_path": "ERA5/configurations/subgraph/model_configs/base2_d2.json",
+    "dataset_id": "sub_fixcrop_median_woPos_tkernel",
+    "dataset_path": "ERA5/datasets/subgraph",
+    "learning_rate": 0.001,
+    "scheduler_step": 2,
+    "scheduler_gamma": 0.5,
+    "epochs": 25,
+    "random_seed": 42,
+    "use_gradient_clipping": true,
+    "track_gradients": true,
+    "checkpoint_every": 5
+}
+
+

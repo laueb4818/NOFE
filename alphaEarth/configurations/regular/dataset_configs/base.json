@@ -1,0 +1,14 @@
+{
+    "data_folder_path": "../data/",
+    "dataset_save_path": "../datasets/regular/",
+    "bbox": [10.79, 59.66, 10.86, 59.73],
+    "N": 5000,
+    "k": 10,
+    "perplexity": 10,
+    "sampling_method": "random",
+    "train_years": [2017, 2018, 2019, 2020, 2021],
+    "test_years": [2023],
+    "train_samples_per_year": 1000,
+    "test_samples_per_year": 100,
+    "feature_mode": "channel_and_position"
+}

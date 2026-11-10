@@ -1,0 +1,32 @@
+name: spatialpca
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.4
+  - r-matrix
+  - r-rspectra
+  - r-rtsne
+  - r-tidyr
+  - r-ggplot2
+  - r-dplyr
+  - r-assertthat
+  - r-devtools
+  - r-remotes
+  - r-seurat
+  - bioconductor-splatter
+  - bioconductor-bluster
+  - r-irkernel
+  - r-mass
+  - r-pdist
+  - r-umap
+
+# SpatialPCA is NOT on CRAN (archived) and has no conda package; SPARK is GitHub-only
+# too, so neither can be listed above. Both must be installed once after
+# `conda env create`, or ERA5/notebooks/execute_spatialpca.R fails at
+# `library(SpatialPCA)` with
+#   Error in library(SpatialPCA) : there is no package called 'SpatialPCA'
+# even though env creation succeeded. Use the checked-in installer, which downloads the
+# source tarballs directly (upstream's `remotes::install_github` recipe fails wherever a
+# `gh` credential helper is configured, because it routes through the GitHub API):
+#   bash ERA5/spatialpca/install_spatialpca_R_deps.sh
