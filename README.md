@@ -1,17 +1,49 @@
 # NOFE: Neural Operator Function Embedding
 
-Official implementation of **NOFE: Neural Operator Function Embedding** (paper link TBD).
+Official implementation of **NOFE — Neural Operator Function Embedding**
+([arXiv:2605.11970](https://arxiv.org/abs/2605.11970) · [PDF](https://arxiv.org/pdf/2605.11970v2)).
 
-NOFE learns function-to-function mappings with a graph kernel operator. Because the operator acts on a
-point set rather than a grid, a trained model can be evaluated at arbitrary query locations, independent
-of the discretization of the input data. The repository ships four applications — ERA5 weather fields,
-dMRI brain volumes, MODIS Himalaya satellite tiles and AlphaEarth embeddings — each with dataset
-creation, all three training modes, and the figure/evaluation notebooks from the paper.
+> Lars Uebbing, Harald L. Joakimsen, Siyan Chen, Georgios Leontidis, Kristoffer K. Wickstrøm,
+> Michael C. Kampffmeyer, Sébastien Lefèvre, Arnt-Børre Salberg, Robert Jenssen
+
+Most dimensionality-reduction methods treat data as discrete point clouds and ignore the continuous
+domain structure of the underlying process. NOFE is a domain-aware framework for continuous
+dimensionality reduction: it learns a **function-to-function mapping** with a Graph Kernel Operator, so a
+trained model can be evaluated, mesh-free, at arbitrary query locations independent of the input
+discretization. NOFE is derived as an approximation of sheaf-to-sheaf mappings, generalizing Sheaf Neural
+Networks to continuous domains.
+
+This repository ships the four applications from the paper — ERA5 climate reanalysis, dMRI brain volumes,
+MODIS Himalaya satellite tiles and AlphaEarth embeddings — with dataset creation, all training modes, the
+evaluation scripts and the figure notebooks.
 
 ```bash
 git clone https://github.com/laueb4818/NOFE.git
 cd NOFE
 ```
+
+**Contents:** [Results](#results-at-a-glance) · [Installation](#installation) · [Data](#data) ·
+[Dataset creation](#dataset-creation) · [Training](#training) · [Model architecture](#model-architecture) ·
+[Configurations](#configurations) · [Evaluation](#evaluation-and-figures) · [Notebooks](#notebooks) ·
+[Pre-trained models](#pre-trained-models) · [Repository structure](#repository-structure) ·
+[Citation](#citation) · [License](#license)
+
+---
+
+## Results at a glance
+
+Metrics reported in the paper for the ERA5 climate reanalysis dataset:
+
+| Metric | NOFE | PCA | t-SNE | UMAP |
+|---|---|---|---|---|
+| Local Stress (lower is better) | **0.111** | 0.398 | 0.773 | 0.791 |
+| Stress-1, global structure (lower is better) | 0.379 | **0.268** | — | — |
+| Patch Stitching Error, regional normalization (lower is better) | **59.0** | — | — | 267.6 |
+
+NOFE preserves local structure substantially better than all baselines, reduces the Patch Stitching Error
+by up to **20.0×** relative to UMAP, and stays consistent across disjoint domain patches, while remaining
+competitive on global structure. The `ERA5/evaluation_springfield/*_scores/` and `*_errors/` JSONs in this
+repository are the recorded metrics behind these numbers.
 
 ---
 
@@ -59,9 +91,9 @@ Nothing under `**/data/` or `**/datasets/` is committed — both are gitignored,
 ## Dataset creation
 
 Each script takes one positional argument, the config id, and resolves it to
-`<app>/configurations/<mode>/dataset_configs/<id>.json`. Outputs are written to the
-`dataset_save_path` recorded in that config (`<app>/datasets/<mode>/`). The scripts `chdir` into their own
-directory, so they may be invoked from anywhere.
+`<app>/configurations/<mode>/dataset_configs/<id>.json`. Outputs are written to the `dataset_save_path`
+recorded in that config (`<app>/datasets/<mode>/`). The scripts `chdir` into their own directory, so they
+may be invoked from anywhere.
 
 ERA5:
 
@@ -160,7 +192,8 @@ sum over all node pairs) produces exploding gradients and unstable training, so 
 
 The **subgraph variant** (`KernelNN_subgraph`) keeps two disjoint graphs — observed (`source`) and query
 (`target`) — joined by a cross graph, and applies a separate kernel to the cross edges. That is what allows
-prediction on a different point set than the input.
+prediction on a different point set than the input, and it is the mode the sampling-independence and
+patch-stitching experiments use.
 
 | Parameter | Meaning |
 |---|---|
@@ -194,18 +227,17 @@ paper's ablations use):
 | 64 | 128 | 6 |
 
 The subgraph mode ships the same sweep under `ERA5/configurations/subgraph/model_configs/testmodel1…10`
-(`testmodel1…10` covering width 8→128, kernel width 32→256 and depth 1→4) plus `base_d3`/`base2_d2`, which
-are what `subgraph_base` and `subgraph_tkernel_*` use. The paper's headline models are the `papermodel*`
-configs.
+(width 8→128, kernel width 32→256, depth 1→4) plus `base_d3`/`base2_d2`, which are what `subgraph_base` and
+`subgraph_tkernel_*` use. The paper's headline models are the `papermodel*` configs.
 
-The ERA5 dataset-config names follow `toyset_reg_[fix|rand]crop_[var|perp|ones]_[w|wo]Pos`: `fix`/`rand`
+ERA5 dataset-config names follow `toyset_reg_[fix|rand]crop_[var|perp|ones]_[w|wo]Pos`: `fix`/`rand`
 selects a fixed or random bounding box, `var`/`perp`/`ones` records the sigma setting the config was
 originally written for, and `wPos`/`woPos` selects whether node positions are part of the node features
 (`channel_and_position` vs `channel_only`).
 
-Note that neither `sigma_method` nor `perplexity` affects graph construction any more: the k-NN graph is
-selected purely by `k`, and input affinities are computed from the node features. `perplexity` is still
-accepted in dataset configs for compatibility.
+Note that neither `sigma_method` nor `perplexity` affects graph construction: the k-NN graph is selected
+purely by `k`, and input affinities are computed from the node features. `perplexity` is still accepted in
+dataset configs for compatibility.
 
 ---
 
@@ -223,10 +255,11 @@ python patch_stitching_v2_new.py regular_papermodel1_2026-05-04_t11-31-09  # -> 
 ```
 
 `ERA5/scripts/eval_computation_cost.py` measures per-sample preprocessing/embedding time and writes
-`ERA5/scripts/computation_times*.csv`; those CSVs are the paper's timing table and are committed.
-It needs `ERA5/scripts/graphs.pt`, which is **not** shipped — the script's default preprocessing pass
-rebuilds it from the LMDB datasets (`--no-preprocessing` skips that step).
-Baseline embeddings live one directory per method and each runs in its own conda env:
+`ERA5/scripts/computation_times*.csv`; those CSVs are the paper's timing table and are committed. It needs
+`ERA5/scripts/graphs.pt`, which is **not** shipped — the script's default preprocessing pass rebuilds it
+from the LMDB datasets (`--no-preprocessing` skips that step).
+
+Baseline embeddings live one directory per method, and each runs in its own conda env:
 
 | Method | Directory | Entry point |
 |---|---|---|
@@ -244,8 +277,8 @@ conda env create -f spatialpca_environment.yml
 bash ERA5/spatialpca/install_spatialpca_R_deps.sh
 ```
 
-`ERA5/paper_figures/lipschitz-stat.ipynb` shells out to `Rscript` via the `SPATIALPCA_RSCRIPT`
-environment variable (default `Rscript`, i.e. whatever is on `PATH`):
+`ERA5/paper_figures/lipschitz-stat.ipynb` shells out to `Rscript` via the `SPATIALPCA_RSCRIPT` environment
+variable (default `Rscript`, i.e. whatever is on `PATH`):
 
 ```bash
 export SPATIALPCA_RSCRIPT="$HOME/miniforge3/envs/spatialpca/bin/Rscript"
@@ -304,18 +337,17 @@ All notebooks are stored without outputs. Run them from their own directory: eve
 
 ## Pre-trained models
 
-Model checkpoints are **not** released. Data, trained weights and run outputs are all gitignored.
-
-The recorded metrics from the paper runs are committed, so the quantitative results stay reproducible at the
-figure level without the checkpoints:
+Model checkpoints are **not** released — data, trained weights and run outputs are all gitignored. The
+recorded metrics from the paper runs are committed, so the quantitative results remain checkable without
+the checkpoints:
 
 - `ERA5/evaluation_springfield/distance_preservation_scores/` — distance-preservation scores
 - `ERA5/evaluation_springfield/gluing_errors/` — gluing errors
 - `ERA5/evaluation_springfield/patch_stitching_errors/`, `patch_stitching_errors_v2/` — patch-stitching errors
 - `ERA5/scripts/computation_times*.csv` — preprocessing/embedding timings
 
-The notebooks that consume trained models read them from `<app>/trained_models/<mode>/<model_id>.pth`
-plus the matching `<model_id>.json` under `logs/configs/`; train first, then run the notebook.
+Notebooks that consume trained models read them from `<app>/trained_models/<mode>/<model_id>.pth` plus the
+matching `<model_id>.json` under `logs/configs/`; train first, then run the notebook.
 
 ---
 
@@ -344,6 +376,7 @@ NOFE/
 ├── modis_himalaya/               # same layout, MODIS application
 ├── alphaEarth/                   # same layout, AlphaEarth application
 ├── Dockerfile
+├── LICENSE
 ├── conda_environment_nofe.yml
 ├── env.yaml  env_modified.yaml   # macOS-arm64 reference exports
 ├── requirements.txt  requirements2.txt
@@ -354,21 +387,36 @@ NOFE/
 
 ## Citation
 
-If you use this code in your research, please cite:
+If you use this code or the NOFE method in your research, please cite:
 
 ```bibtex
-@article{nofe2025,
-  title     = {NOFE: Neural Operator Function Embedding},
-  author    = {[Authors TBD]},
-  journal   = {[Venue TBD]},
-  year      = {2025},
-  url       = {[URL TBD]}
+@misc{uebbing2026nofe,
+  title         = {NOFE -- Neural Operator Function Embedding},
+  author        = {Lars Uebbing and Harald L. Joakimsen and Siyan Chen and Georgios Leontidis
+                   and Kristoffer K. Wickstr{\o}m and Michael C. Kampffmeyer and S{\'e}bastien Lef{\`e}vre
+                   and Arnt-B{\o}rre Salberg and Robert Jenssen},
+  year          = {2026},
+  eprint        = {2605.11970},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2605.11970}
 }
 ```
+
+---
+
+## License
+
+Released under the [MIT License](LICENSE) — © 2026 the NOFE authors.
+
+The license covers the source code in this repository. The datasets it operates on keep their own terms:
+ERA5 data is subject to the Copernicus Climate Change Service licence, HCP dMRI data to the Human
+Connectome Project open-access terms, and the AlphaEarth and MODIS products to their respective providers'
+terms. Trained model checkpoints are not distributed.
 
 ---
 
 ## Acknowledgements
 
 - ERA5 data provided by the [Copernicus Climate Change Service](https://cds.climate.copernicus.eu/)
-- dMRI data provided by the [The Human Connectome Project](https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-young-adult-2025-release)
+- dMRI data provided by the [Human Connectome Project](https://www.humanconnectome.org/study/hcp-young-adult/document/hcp-young-adult-2025-release)
